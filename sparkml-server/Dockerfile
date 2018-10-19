@@ -9,7 +9,7 @@ RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_V
     apt-get install sbt
 
 COPY / /spark-serving
-WORKDIR spark-serving
+WORKDIR spark-serving/sparkml-server
 RUN sbt assembly
 RUN cp ./target/scala-2.11/spark-serving-assembly-0.1.0-SNAPSHOT.jar /usr/local/lib/spark-serving-assembly-0.1.0-SNAPSHOT.jar
 RUN cp ./serve.sh /usr/local/bin/serve.sh
