@@ -2,7 +2,7 @@ val ScalatraVersion = "2.6.2"
 
 organization := "com.amazonaws.sagemaker"
 
-name := "spark-serving"
+name := "model-server"
 
 version := "0.1.0-SNAPSHOT"
 scalaVersion := "2.11.8"
