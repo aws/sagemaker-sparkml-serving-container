@@ -1,37 +1,37 @@
 package com.amazonaws.sagemaker.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.StringJoiner;
+
+@Component
 public class SageMakerRequestObject {
-    private String outputColumn;
-    private SingleRow singleRow;
-    private Boolean isOutputList;
+    private List<SingleColumn> input;
+    private SingleColumn output;
 
-    public SageMakerRequestObject(String outputColumn, SingleRow singleRow, Boolean isOutputList) {
-        this.outputColumn = outputColumn;
-        this.singleRow = singleRow;
-        this.isOutputList = isOutputList;
+    @JsonCreator
+    public SageMakerRequestObject(@JsonProperty("input") List<SingleColumn> input,
+                                  @JsonProperty("output") SingleColumn output) {
+        this.input = input;
+        this.output = output;
     }
 
-    public String getOutputColumn() {
-        return outputColumn;
+    public List<SingleColumn> getInput() {
+        return input;
     }
 
-    public void setOutputColumn(String outputColumn) {
-        this.outputColumn = outputColumn;
+    public SingleColumn getOutput() {
+        return output;
     }
 
-    public SingleRow getSingleRow() {
-        return singleRow;
-    }
-
-    public void setSingleRow(SingleRow singleRow) {
-        this.singleRow = singleRow;
-    }
-
-    public Boolean getOutputList() {
-        return isOutputList;
-    }
-
-    public void setOutputList(Boolean outputList) {
-        isOutputList = outputList;
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", SageMakerRequestObject.class.getSimpleName() + "[", "]")
+                .add("input=" + input)
+                .add("output=" + output)
+                .toString();
     }
 }
