@@ -6,7 +6,7 @@ COPY / /model-server-java
 WORKDIR /model-server-java
 
 RUN mvn clean compile
-RUN mvn package spring-boot:repackage
+RUN mvn package
 
 RUN cp ./target/sparkml-model-server-1.0-SNAPSHOT.jar /usr/local/lib/sparkml-model-server-1.0-SNAPSHOT.jar
 RUN cp ./serve.sh /usr/local/bin/serve.sh
