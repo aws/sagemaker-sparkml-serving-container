@@ -31,7 +31,7 @@ public class ResponseSerializer {
     }
 
     public ResponseEntity<String> returnListOutput(Iterator<Object> outputDataIterator, String contentType) {
-        if (StringUtils.equals(contentType, MimeType.TEXT_CSV)) {
+        if (StringUtils.equalsIgnoreCase(contentType, MimeType.TEXT_CSV)) {
             return this.returnCsvOutput(outputDataIterator);
         } else {
             return this.returnStandardJsonOutput(outputDataIterator, contentType);

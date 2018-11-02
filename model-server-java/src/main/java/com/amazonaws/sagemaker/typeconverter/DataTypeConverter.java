@@ -3,7 +3,6 @@ package com.amazonaws.sagemaker.typeconverter;
 import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.type.BasicDataType;
 import com.amazonaws.sagemaker.type.StructureType;
-import com.amazonaws.sagemaker.utils.ErrorResponseUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,16 +38,16 @@ public class DataTypeConverter {
 
     public DefaultLeapFrame convertInputToLeapFrame(final SageMakerRequestObject sro) {
 
-        List<StructField> structFieldList = sro.getInput().stream().map(sc -> new StructField(sc.getName(),
+        final List<StructField> structFieldList = sro.getInput().stream().map(sc -> new StructField(sc.getName(),
             this.castInputToMLeapInputType(sc.getType(), sc.getStructure()))).collect(Collectors.toList());
-        List<Object> valueList = sro.getInput().stream().map(sc -> this.castInputToJavaType(sc.getType(),
+        final List<Object> valueList = sro.getInput().stream().map(sc -> this.castInputToJavaType(sc.getType(),
             sc.getStructure(),
             sc.getVal())).collect(Collectors.toList());
 
-        StructType schema = leapFrameBuilder.createSchema(structFieldList);
-        Row currentRow = support.createRowFromIterable(valueList);
+        final StructType schema = leapFrameBuilder.createSchema(structFieldList);
+        final Row currentRow = support.createRowFromIterable(valueList);
 
-        List<Row> rows = new ArrayList<>();
+        final List<Row> rows = new ArrayList<>();
         rows.add(currentRow);
 
         return leapFrameBuilder.createFrame(schema, rows);
@@ -78,7 +77,7 @@ public class DataTypeConverter {
                     return null;
             }
         } else {
-            List<Object> listOfObjects = (List<Object>) value;
+            final List<Object> listOfObjects = (List<Object>) value;
             switch (type) {
                 case BasicDataType.INTEGER:
                     return listOfObjects.stream().map(elem -> (Integer) elem).collect(Collectors.toList());
@@ -158,7 +157,7 @@ public class DataTypeConverter {
                 basicType = null;
         }
         if (basicType == null) {
-            ErrorResponseUtils.throwBadRequest("Data type passed in the request is wrong for one or more columns");
+            throw new IllegalArgumentException("Data type passed in the request is wrong for one or more columns");
         }
         if (StringUtils.isNotBlank(structure)) {
             switch (structure) {
