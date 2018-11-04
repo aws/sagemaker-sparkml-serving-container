@@ -4,11 +4,9 @@ import org.springframework.http.ResponseEntity;
 
 public class CommonUtils {
 
-    private static final int CORE_TO_THREAD_RATIO = 10;
-
-    public static int getNumberOfThreads() {
+    public static int getNumberOfThreads(final Integer coreToThreadRatio) {
         final int numberOfCores = Runtime.getRuntime().availableProcessors();
-        return CORE_TO_THREAD_RATIO * numberOfCores;
+        return coreToThreadRatio * numberOfCores;
     }
 
     public static ResponseEntity<String> throwBadRequest(final String errorMessage) {

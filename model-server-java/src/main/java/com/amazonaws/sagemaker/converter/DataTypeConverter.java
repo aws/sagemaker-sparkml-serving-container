@@ -1,9 +1,10 @@
-package com.amazonaws.sagemaker.typeconverter;
+package com.amazonaws.sagemaker.converter;
 
 import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.type.BasicDataType;
 import com.amazonaws.sagemaker.type.StructureType;
-import java.util.ArrayList;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Collectors;
 import ml.combust.mleap.core.types.BasicType;
@@ -20,7 +21,6 @@ import ml.combust.mleap.runtime.javadsl.LeapFrameBuilder;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilderSupport;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -30,9 +30,9 @@ public class DataTypeConverter {
     private final LeapFrameBuilder leapFrameBuilder;
 
     @Autowired
-    public DataTypeConverter(@NonNull LeapFrameBuilderSupport support, @NonNull LeapFrameBuilder leapFrameBuilder) {
-        this.support = support;
-        this.leapFrameBuilder = leapFrameBuilder;
+    public DataTypeConverter(LeapFrameBuilderSupport support, LeapFrameBuilder leapFrameBuilder) {
+        this.support = Preconditions.checkNotNull(support);
+        this.leapFrameBuilder = Preconditions.checkNotNull(leapFrameBuilder);
     }
 
 
@@ -47,15 +47,39 @@ public class DataTypeConverter {
         final StructType schema = leapFrameBuilder.createSchema(structFieldList);
         final Row currentRow = support.createRowFromIterable(valueList);
 
-        final List<Row> rows = new ArrayList<>();
+        final List<Row> rows = Lists.newArrayList();
         rows.add(currentRow);
 
         return leapFrameBuilder.createFrame(schema, rows);
     }
 
+
+    public Object castMLeapBasicTypeToJavaType(final ArrayRow predictionRow, final String type) {
+        switch (type) {
+            case BasicDataType.INTEGER:
+                return predictionRow.getInt(0);
+            case BasicDataType.LONG:
+                return predictionRow.getLong(0);
+            case BasicDataType.FLOAT:
+                return predictionRow.getFloat(0);
+            case BasicDataType.DOUBLE:
+                return predictionRow.getDouble(0);
+            case BasicDataType.BOOLEAN:
+                return predictionRow.getBool(0);
+            case BasicDataType.BYTE:
+                return predictionRow.getByte(0);
+            case BasicDataType.SHORT:
+                return predictionRow.getShort(0);
+            case BasicDataType.STRING:
+                return predictionRow.getString(0);
+            default:
+                return null;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Object castInputToJavaType(final String type, final String structure, final Object value) {
-        if (StringUtils.isBlank(structure) || StringUtils.equalsIgnoreCase(structure, StructureType.BASIC)) {
+        if (StringUtils.isBlank(structure) || StringUtils.equals(structure, StructureType.BASIC)) {
             switch (type) {
                 case BasicDataType.INTEGER:
                     return new Integer(value.toString());
@@ -100,29 +124,6 @@ public class DataTypeConverter {
                     return null;
             }
 
-        }
-    }
-
-    public Object castMLeapBasicTypeToJavaType(final ArrayRow predictionRow, final String type) {
-        switch (type) {
-            case BasicDataType.INTEGER:
-                return predictionRow.getInt(0);
-            case BasicDataType.LONG:
-                return predictionRow.getLong(0);
-            case BasicDataType.FLOAT:
-                return predictionRow.getFloat(0);
-            case BasicDataType.DOUBLE:
-                return predictionRow.getDouble(0);
-            case BasicDataType.BOOLEAN:
-                return predictionRow.getBool(0);
-            case BasicDataType.BYTE:
-                return predictionRow.getByte(0);
-            case BasicDataType.SHORT:
-                return predictionRow.getShort(0);
-            case BasicDataType.STRING:
-                return predictionRow.getString(0);
-            default:
-                return null;
         }
     }
 

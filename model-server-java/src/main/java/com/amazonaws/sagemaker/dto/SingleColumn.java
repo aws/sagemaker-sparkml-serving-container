@@ -1,10 +1,12 @@
 package com.amazonaws.sagemaker.dto;
 
 
+import com.amazonaws.sagemaker.type.StructureType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.StringJoiner;
+import com.google.common.base.Preconditions;
+import java.util.Optional;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SingleColumn {
@@ -19,9 +21,9 @@ public class SingleColumn {
     @JsonCreator
     public SingleColumn(@JsonProperty("name") String name, @JsonProperty("type") String type,
         @JsonProperty("struct") String structure, @JsonProperty("val") Object val) {
-        this.name = name;
-        this.type = type;
-        this.structure = structure;
+        this.name = Preconditions.checkNotNull(name);
+        this.type = Preconditions.checkNotNull(type);
+        this.structure = Optional.ofNullable(structure).orElse(StructureType.BASIC);
         this.val = val;
     }
 
@@ -41,13 +43,4 @@ public class SingleColumn {
         return val;
     }
 
-    @Override
-    public String toString() {
-        return new StringJoiner(", ", SingleColumn.class.getSimpleName() + "[", "]")
-            .add("name='" + name + "'")
-            .add("type='" + type + "'")
-            .add("structure='" + structure + "'")
-            .add("val=" + val)
-            .toString();
-    }
 }

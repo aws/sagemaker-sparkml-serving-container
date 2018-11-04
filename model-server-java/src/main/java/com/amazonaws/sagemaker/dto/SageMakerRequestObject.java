@@ -2,8 +2,8 @@ package com.amazonaws.sagemaker.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import java.util.List;
-import java.util.StringJoiner;
 
 public class SageMakerRequestObject {
 
@@ -13,8 +13,8 @@ public class SageMakerRequestObject {
     @JsonCreator
     public SageMakerRequestObject(@JsonProperty("input") List<SingleColumn> input,
         @JsonProperty("output") SingleColumn output) {
-        this.input = input;
-        this.output = output;
+        this.input = Preconditions.checkNotNull(input);
+        this.output = Preconditions.checkNotNull(output);
     }
 
     public List<SingleColumn> getInput() {
@@ -25,9 +25,4 @@ public class SageMakerRequestObject {
         return output;
     }
 
-    @Override
-    public String toString() {
-        return new StringJoiner(", ", SageMakerRequestObject.class.getSimpleName() + "[", "]").add("input=" + input)
-            .add("output=" + output).toString();
-    }
 }

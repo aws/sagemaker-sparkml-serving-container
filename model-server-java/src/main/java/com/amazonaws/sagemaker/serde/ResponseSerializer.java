@@ -1,10 +1,11 @@
 package com.amazonaws.sagemaker.serde;
 
 import com.amazonaws.sagemaker.dto.StandardJsonOutput;
-import com.amazonaws.sagemaker.type.MimeType;
+import com.amazonaws.sagemaker.dto.TextJsonOutput;
+import com.amazonaws.sagemaker.type.AdditionalMimeType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringJoiner;
@@ -22,55 +23,66 @@ public class ResponseSerializer {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static boolean IS_BATCH_ENVIRONMENT = (System.getenv("SAGEMAKER_BATCH") != null);
-
-    public ResponseEntity<String> returnSingleOutput(String value, String contentType) {
-        final HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, contentType);
-        return ResponseEntity.ok().headers(headers).body(value);
+    public ResponseEntity<String> sendResponseForSingleValue(final String value, String acceptVal) {
+        if (StringUtils.isEmpty(acceptVal)) {
+            acceptVal = AdditionalMimeType.TEXT_CSV.toString();
+        }
+        return StringUtils.equals(acceptVal, AdditionalMimeType.TEXT_CSV.toString()) ? this.getCsvOkResponse(value)
+            : this.getJsonlinesOkResponse(value);
     }
 
-    public ResponseEntity<String> returnListOutput(Iterator<Object> outputDataIterator, String contentType) {
-        if (StringUtils.equalsIgnoreCase(contentType, MimeType.TEXT_CSV)) {
-            return this.returnCsvOutput(outputDataIterator);
+    public ResponseEntity<String> sendResponseForList(final Iterator<Object> outputDataIterator, String acceptVal)
+        throws JsonProcessingException {
+        if (StringUtils.equals(acceptVal, AdditionalMimeType.APPLICATION_JSONLINES.toString())) {
+            return this.buildStandardJsonOutputForList(outputDataIterator);
+        } else if (StringUtils.equals(acceptVal, AdditionalMimeType.APPLICATION_JSONLINES_TEXT.toString())) {
+            return this.buildTextJsonOutputForList(outputDataIterator);
         } else {
-            return this.returnStandardJsonOutput(outputDataIterator, contentType);
+            return this.buildCsvOutputForList(outputDataIterator);
         }
     }
 
-    private ResponseEntity<String> returnCsvOutput(Iterator<Object> outputDataIterator) {
+    private ResponseEntity<String> buildCsvOutputForList(final Iterator<Object> outputDataIterator) {
         final StringJoiner sj = new StringJoiner(",");
         while (outputDataIterator.hasNext()) {
             sj.add(outputDataIterator.next().toString());
         }
-        return this.buildCsvOkResponse(sj.toString());
+        return this.getCsvOkResponse(sj.toString());
     }
 
-    private ResponseEntity<String> buildJsonOkResponse(String responseBody, String jsonType) {
-        final HttpHeaders headers = new HttpHeaders();
-        final String contentType = (!IS_BATCH_ENVIRONMENT) ? jsonType : MimeType.APPLICATION_JSONLINES;
-        headers.set(HttpHeaders.CONTENT_TYPE, contentType);
-        return ResponseEntity.ok().headers(headers).body(responseBody);
-    }
-
-    private ResponseEntity<String> buildCsvOkResponse(String responseBody) {
-        final HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, MimeType.TEXT_CSV);
-        return ResponseEntity.ok().headers(headers).body(responseBody);
-    }
-
-    private ResponseEntity<String> returnStandardJsonOutput(Iterator<Object> outputDataIterator, String contentType) {
-        final List<Object> columns = new ArrayList<>();
+    private ResponseEntity<String> buildStandardJsonOutputForList(final Iterator<Object> outputDataIterator)
+        throws JsonProcessingException {
+        final List<Object> columns = Lists.newArrayList();
         while (outputDataIterator.hasNext()) {
             columns.add(outputDataIterator.next());
         }
         final StandardJsonOutput jsonOutput = new StandardJsonOutput(columns);
-        try {
-            final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
-            return this.buildJsonOkResponse(jsonRepresentation, contentType);
-        } catch (final JsonProcessingException ex) {
-            LOG.error("Error in converting response to JSON format", ex);
-            return ResponseEntity.badRequest().build();
-        }
+        final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
+        return this.getJsonlinesOkResponse(jsonRepresentation);
     }
+
+    private ResponseEntity<String> buildTextJsonOutputForList(final Iterator<Object> outputDataIterator)
+        throws JsonProcessingException {
+        final StringJoiner stringJoiner = new StringJoiner(" ");
+        while (outputDataIterator.hasNext()) {
+            stringJoiner.add(outputDataIterator.next().toString());
+        }
+        final TextJsonOutput jsonOutput = new TextJsonOutput(stringJoiner.toString());
+        final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
+        return this.getJsonlinesOkResponse(jsonRepresentation);
+    }
+
+    private ResponseEntity<String> getCsvOkResponse(final String responseBody) {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CONTENT_TYPE, AdditionalMimeType.TEXT_CSV.toString());
+        return ResponseEntity.ok().headers(headers).body(responseBody);
+    }
+
+    // We are always responding with the valid format for application/jsonlines, which is a valid JSON
+    private ResponseEntity<String> getJsonlinesOkResponse(final String responseBody) {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CONTENT_TYPE, AdditionalMimeType.APPLICATION_JSONLINES.toString());
+        return ResponseEntity.ok().headers(headers).body(responseBody);
+    }
+
 }

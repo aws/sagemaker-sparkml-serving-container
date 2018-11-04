@@ -2,6 +2,7 @@ package com.amazonaws.sagemaker.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 
 public class BatchExecutionParameter {
 
@@ -15,11 +16,10 @@ public class BatchExecutionParameter {
     private Integer maxPayloadInMB;
 
     @JsonCreator
-    public BatchExecutionParameter(final Integer maxConcurrentTransforms, final String batchStrategy,
-        final Integer maxPayloadInMB) {
-        this.maxConcurrentTransforms = maxConcurrentTransforms;
-        this.batchStrategy = batchStrategy;
-        this.maxPayloadInMB = maxPayloadInMB;
+    public BatchExecutionParameter(Integer maxConcurrentTransforms, String batchStrategy, Integer maxPayloadInMB) {
+        this.maxConcurrentTransforms = Preconditions.checkNotNull(maxConcurrentTransforms);
+        this.batchStrategy = Preconditions.checkNotNull(batchStrategy);
+        this.maxPayloadInMB = Preconditions.checkNotNull(maxPayloadInMB);
     }
 
     public Integer getMaxConcurrentTransforms() {
