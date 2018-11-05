@@ -1,5 +1,9 @@
 package com.amazonaws.sagemaker.type;
 
+/**
+ * Each column in the input and output can be a single value (basic), Spark ArrayType(array) or Spark Vector type
+ * (vector)
+ */
 public final class StructureType {
 
     public static final String BASIC = "basic";

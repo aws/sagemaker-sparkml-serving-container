@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class StandardJsonOutputTest {
+public class StandardJsonlinesOutputTest {
 
     private ObjectMapper mapper;
 
@@ -21,22 +21,22 @@ public class StandardJsonOutputTest {
     @Test
     public void testStandardJsonOutputObjectCreation() {
         List<Object> featureList = Lists.newArrayList(new Integer("1"), new Double("2.0"), "3");
-        StandardJsonOutput standardJsonOutputTest = new StandardJsonOutput(featureList);
-        Assert.assertNotNull(standardJsonOutputTest.getFeatures());
-        Assert.assertTrue(standardJsonOutputTest.getFeatures().get(0) instanceof Integer);
-        Assert.assertTrue(standardJsonOutputTest.getFeatures().get(1) instanceof Double);
-        Assert.assertTrue(standardJsonOutputTest.getFeatures().get(2) instanceof String);
+        StandardJsonlinesOutput standardJsonlinesOutputTest = new StandardJsonlinesOutput(featureList);
+        Assert.assertNotNull(standardJsonlinesOutputTest.getFeatures());
+        Assert.assertTrue(standardJsonlinesOutputTest.getFeatures().get(0) instanceof Integer);
+        Assert.assertTrue(standardJsonlinesOutputTest.getFeatures().get(1) instanceof Double);
+        Assert.assertTrue(standardJsonlinesOutputTest.getFeatures().get(2) instanceof String);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullInputPassedToConstructor() {
-        new StandardJsonOutput(null);
+        new StandardJsonlinesOutput(null);
     }
 
     @Test
     public void testParseStandardJsonOutput() throws IOException {
         String inputJson = IOUtils.toString(this.getClass().getResourceAsStream("standard_json_out.json"), "UTF-8");
-        StandardJsonOutput sjo = mapper.readValue(inputJson, StandardJsonOutput.class);
+        StandardJsonlinesOutput sjo = mapper.readValue(inputJson, StandardJsonlinesOutput.class);
         Assert.assertEquals(sjo.getFeatures(), Lists.newArrayList(1.0,2.0,4.0));
     }
 }

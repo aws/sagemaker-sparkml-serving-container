@@ -3,6 +3,9 @@ package com.amazonaws.sagemaker;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * Spring Boot starter application
+ */
 @SpringBootApplication
 public class App {
 

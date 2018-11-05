@@ -1,7 +1,7 @@
 package com.amazonaws.sagemaker.serde;
 
-import com.amazonaws.sagemaker.dto.StandardJsonOutput;
-import com.amazonaws.sagemaker.dto.TextJsonOutput;
+import com.amazonaws.sagemaker.dto.StandardJsonlinesOutput;
+import com.amazonaws.sagemaker.dto.TextJsonlinesOutput;
 import com.amazonaws.sagemaker.type.AdditionalMimeType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,19 +10,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringJoiner;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+/**
+ * This class contains the logic for converting MLeap response into SageMaker specific response along with status-codes
+ */
 @Component
 public class ResponseSerializer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ResponseSerializer.class);
-
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Sends the response when the output is a single value (e.g. prediction)
+     *
+     * @param value, the response value
+     * @param acceptVal, the accept customer has passed or default (text/csv) if not passed
+     * @return Spring ResponseEntity which contains the body and the header
+     */
     public ResponseEntity<String> sendResponseForSingleValue(final String value, String acceptVal) {
         if (StringUtils.isEmpty(acceptVal)) {
             acceptVal = AdditionalMimeType.TEXT_CSV.toString();
@@ -31,6 +37,16 @@ public class ResponseSerializer {
             : this.getJsonlinesOkResponse(value);
     }
 
+    /**
+     * This method is responsible for sending the values in the appropriate format so that it can be parsed by other 1P
+     * algorithms. Currently, it supports two formats, standard jsonlines and jsonlines for text. Please see
+     * test/resources/com/amazonaws/sagemaker/dto for example output format or SageMaker built-in algorithms
+     * documentaiton to know about the output format.
+     *
+     * @param outputDataIterator, data iterator for raw output values in case output is an Array or Vector
+     * @param acceptVal, the accept customer has passed or default (text/csv) if not passed
+     * @return Spring ResponseEntity which contains the body and the header.
+     */
     public ResponseEntity<String> sendResponseForList(final Iterator<Object> outputDataIterator, String acceptVal)
         throws JsonProcessingException {
         if (StringUtils.equals(acceptVal, AdditionalMimeType.APPLICATION_JSONLINES.toString())) {
@@ -56,7 +72,7 @@ public class ResponseSerializer {
         while (outputDataIterator.hasNext()) {
             columns.add(outputDataIterator.next());
         }
-        final StandardJsonOutput jsonOutput = new StandardJsonOutput(columns);
+        final StandardJsonlinesOutput jsonOutput = new StandardJsonlinesOutput(columns);
         final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
         return this.getJsonlinesOkResponse(jsonRepresentation);
     }
@@ -67,7 +83,7 @@ public class ResponseSerializer {
         while (outputDataIterator.hasNext()) {
             stringJoiner.add(outputDataIterator.next().toString());
         }
-        final TextJsonOutput jsonOutput = new TextJsonOutput(stringJoiner.toString());
+        final TextJsonlinesOutput jsonOutput = new TextJsonlinesOutput(stringJoiner.toString());
         final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
         return this.getJsonlinesOkResponse(jsonRepresentation);
     }

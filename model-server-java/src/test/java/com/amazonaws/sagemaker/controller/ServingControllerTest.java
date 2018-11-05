@@ -6,7 +6,6 @@ import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.dto.SingleColumn;
 import com.amazonaws.sagemaker.serde.ResponseSerializer;
 import com.amazonaws.sagemaker.utils.CommonUtils;
-import com.amazonaws.sagemaker.utils.ScalaAbstractionUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -28,7 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ScalaAbstractionUtils.class})
+@PrepareForTest(CommonUtils.class)
 class ServingControllerTest {
 
     private ServingController controller;
@@ -66,14 +65,13 @@ class ServingControllerTest {
         this.buildDefaultSageMakerRequestObject();
         this.buildResponseLeapFrame();
         controller = new ServingController(mleapTransformerMock, serializer, converter);
-        PowerMockito.mockStatic(ScalaAbstractionUtils.class);
-        PowerMockito.when(ScalaAbstractionUtils
-            .transformLeapFrame(Mockito.any(Transformer.class), Mockito.any(DefaultLeapFrame.class)))
-            .thenReturn(responseLeapFrame);
+        PowerMockito.mockStatic(CommonUtils.class);
         PowerMockito
-            .when(ScalaAbstractionUtils.selectFromLeapFrame(Mockito.any(DefaultLeapFrame.class), Mockito.anyString()))
+            .when(CommonUtils.transformLeapFrame(Mockito.any(Transformer.class), Mockito.any(DefaultLeapFrame.class)))
             .thenReturn(responseLeapFrame);
-        PowerMockito.when(ScalaAbstractionUtils.getOutputArrayRow(Mockito.any(DefaultLeapFrame.class)))
+        PowerMockito.when(CommonUtils.selectFromLeapFrame(Mockito.any(DefaultLeapFrame.class), Mockito.anyString()))
+            .thenReturn(responseLeapFrame);
+        PowerMockito.when(CommonUtils.getOutputArrayRow(Mockito.any(DefaultLeapFrame.class)))
             .thenReturn(outputArrayRow);
     }
 
@@ -104,8 +102,8 @@ class ServingControllerTest {
         SingleColumn outputCol = new SingleColumn("out_name", "int", "array", null);
         sro = new SageMakerRequestObject(input, outputCol);
         List<Object> outputList = Lists.newArrayList(1, 2);
-        PowerMockito.when(
-            ScalaAbstractionUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+        PowerMockito
+            .when(CommonUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
             .thenReturn(outputList.iterator());
         final ResponseEntity<String> output = controller.transformRequest(sro, "text/csv");
         Assert.assertEquals(output.getBody(), "1,2");
@@ -116,8 +114,8 @@ class ServingControllerTest {
         SingleColumn outputCol = new SingleColumn("out_name", "int", "vector", null);
         sro = new SageMakerRequestObject(input, outputCol);
         List<Object> outputList = Lists.newArrayList(1, 2);
-        PowerMockito.when(
-            ScalaAbstractionUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+        PowerMockito
+            .when(CommonUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
             .thenReturn(outputList.iterator());
         final ResponseEntity<String> output = controller.transformRequest(sro, "application/jsonlines");
         Assert.assertEquals(output.getBody(), "{\"features\":[1,2]}");
@@ -128,8 +126,8 @@ class ServingControllerTest {
         SingleColumn outputCol = new SingleColumn("out_name", "int", "array", null);
         sro = new SageMakerRequestObject(input, outputCol);
         List<Object> outputList = Lists.newArrayList(1, 2);
-        PowerMockito.when(
-            ScalaAbstractionUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+        PowerMockito
+            .when(CommonUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
             .thenReturn(outputList.iterator());
         final ResponseEntity<String> output = controller.transformRequest(sro, null);
         Assert.assertEquals(output.getBody(), "1,2");
@@ -139,8 +137,8 @@ class ServingControllerTest {
     public void testListValueThrowsException() {
         SingleColumn outputCol = new SingleColumn("out_name", "int", "array", null);
         sro = new SageMakerRequestObject(input, outputCol);
-        PowerMockito.when(
-            ScalaAbstractionUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+        PowerMockito
+            .when(CommonUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
             .thenThrow(new RuntimeException("input data is not valid"));
         final ResponseEntity<String> output = controller.transformRequest(sro, "text/csv");
         Assert.assertEquals(output.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -152,5 +150,37 @@ class ServingControllerTest {
         final ResponseEntity<String> output = controller.transformRequest(null, "text/csv");
         Assert.assertEquals(output.getStatusCode(), HttpStatus.NO_CONTENT);
     }
+
+    @Test
+    public void testParseAcceptEmptyFromRequestEnvironmentPresent() {
+        PowerMockito.when(CommonUtils.getEnvironmentVariable("SAGEMAKER_DEFAULT_INVOCATIONS_ACCEPT"))
+            .thenReturn("application/jsonlines;data=text");
+        Assert.assertEquals(controller.retrieveAndVerifyAccept(null), "application/jsonlines;data=text");
+    }
+
+    @Test
+    public void testParseAcceptAnyFromRequestEnvironmentPresent() {
+        PowerMockito.when(CommonUtils.getEnvironmentVariable("SAGEMAKER_DEFAULT_INVOCATIONS_ACCEPT"))
+            .thenReturn("application/jsonlines;data=text");
+        Assert.assertEquals(controller.retrieveAndVerifyAccept("*/*"), "application/jsonlines;data=text");
+    }
+
+    @Test
+    public void testParseAcceptEmptyFromRequestEnvironmentNotPresent() {
+        Assert.assertEquals(controller.retrieveAndVerifyAccept(null), "text/csv");
+    }
+
+    @Test
+    public void testParseAcceptAnyFromRequestEnvironmentNotPresent() {
+        Assert.assertEquals(controller.retrieveAndVerifyAccept("*/*"), "text/csv");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidAcceptInEnvironment() {
+        PowerMockito.when(CommonUtils.getEnvironmentVariable("SAGEMAKER_DEFAULT_INVOCATIONS_ACCEPT"))
+            .thenReturn("application/json");
+        controller.retrieveAndVerifyAccept("application/json");
+    }
+
 
 }

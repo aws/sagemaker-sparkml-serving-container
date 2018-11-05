@@ -82,18 +82,18 @@
                 <rule>
                   <element>BUNDLE</element>
                   <excludes>
-                    <exclude>com.amazonaws.sagemaker.App</exclude>
-                    <exclude>com.amazonaws.sagemaker.utils.ScalaAbstractionUtils</exclude>
+                    <exclude>**/*com/amazonaws/sagemaker/App.class</exclude>
+                    <exclude>**/*com/amazonaws/sagemaker/utils/CommonUtils.class</exclude>
                   </excludes>
                   <limits>
                     <limit>
                       <counter>LINE</counter>
-                      <minimum>0.85</minimum>
+                      <minimum>0.90</minimum>
                       <value>COVEREDRATIO</value>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
-                      <minimum>0.85</minimum>
+                      <minimum>0.90</minimum>
                       <value>COVEREDRATIO</value>
                     </limit>
                   </limits>

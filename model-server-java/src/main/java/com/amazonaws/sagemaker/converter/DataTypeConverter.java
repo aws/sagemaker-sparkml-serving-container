@@ -24,6 +24,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/**
+ * Converter class to convert data between input to MLeap expected types and convert back MLeap response to Java types
+ * for output.
+ */
 @Component
 public class DataTypeConverter {
 
@@ -37,6 +41,11 @@ public class DataTypeConverter {
     }
 
 
+    /**
+     * Convert input object to DefaultLeapFrame
+     * @param sro, the request object
+     * @return the DefaultLeapFrame object which MLeap transformer expects
+     */
     public DefaultLeapFrame castInputToLeapFrame(final SageMakerRequestObject sro) {
 
         final List<StructField> structFieldList = sro.getInput().stream()
@@ -55,7 +64,12 @@ public class DataTypeConverter {
         return leapFrameBuilder.createFrame(schema, rows);
     }
 
-
+    /**
+     * Convert basic types in the MLeap response to Java types for output.
+     * @param predictionRow, the ArrayRow from MLeapResponse
+     * @param type, the basic type to which the response should be casted, provided by user via input
+     * @return the proper Java type
+     */
     public Object castMLeapBasicTypeToJavaType(final ArrayRow predictionRow, final String type) {
         switch (type) {
             case BasicDataType.INTEGER:
@@ -63,7 +77,6 @@ public class DataTypeConverter {
             case BasicDataType.LONG:
                 return predictionRow.getLong(0);
             case BasicDataType.FLOAT:
-                return predictionRow.getFloat(0);
             case BasicDataType.DOUBLE:
                 return predictionRow.getDouble(0);
             case BasicDataType.BOOLEAN:

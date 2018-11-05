@@ -1,12 +1,22 @@
 package com.amazonaws.sagemaker.configuration;
 
+import com.amazonaws.sagemaker.utils.CommonUtils;
 import java.io.File;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(CommonUtils.class)
 public class BeanConfigurationTest {
+
+    public BeanConfigurationTest() {
+    }
 
     private BeanConfiguration configuration;
 
@@ -61,6 +71,13 @@ public class BeanConfigurationTest {
             (System.getenv("SAGEMAKER_BIND_TO_PORT") != null) ? System.getenv("SAGEMAKER_BIND_TO_PORT") : "8080";
         Assert.assertEquals((int) new Integer(listenerPort), jettyServletTest.getPort());
         Assert.assertNotNull(jettyServletTest.getServerCustomizers());
+    }
+
+    @Test
+    public void testParsePortFromEnvironment() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.when(CommonUtils.getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT")).thenReturn("7070");
+        Assert.assertEquals(configuration.getHttpListenerPort(), "7070");
     }
 
 }

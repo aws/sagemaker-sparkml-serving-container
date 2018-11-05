@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
+/**
+ * POJO class corresponding to the execution-parameters API call that Batch requires
+ */
 public class BatchExecutionParameter {
 
     @JsonProperty("MaxConcurrentTransforms")

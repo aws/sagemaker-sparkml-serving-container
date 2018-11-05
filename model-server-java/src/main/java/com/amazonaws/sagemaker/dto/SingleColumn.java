@@ -8,6 +8,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import java.util.Optional;
 
+/**
+ * POJO to represent single column of Spark data that MLeap will transform. Each column can be a basic value or a List
+ * of basic values (for Spark Array or Vector).
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SingleColumn {
 

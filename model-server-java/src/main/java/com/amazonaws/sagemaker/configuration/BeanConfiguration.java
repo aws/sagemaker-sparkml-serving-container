@@ -1,6 +1,7 @@
 package com.amazonaws.sagemaker.configuration;
 
 import com.amazonaws.sagemaker.utils.CommonUtils;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.List;
@@ -16,6 +17,9 @@ import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Contains all Spring bean configurations
+ */
 @SpringBootConfiguration
 public class BeanConfiguration {
 
@@ -61,10 +65,9 @@ public class BeanConfiguration {
 
     @Bean
     public JettyServletWebServerFactory provideJettyServletWebServerFactory() {
-        final String listenerPort =
-            (System.getenv("SAGEMAKER_BIND_TO_PORT") != null) ? System.getenv("SAGEMAKER_BIND_TO_PORT")
-                : DEFAULT_HTTP_LISTENER_PORT;
-        final JettyServletWebServerFactory jettyServlet = new JettyServletWebServerFactory(new Integer(listenerPort));
+
+        final JettyServletWebServerFactory jettyServlet = new JettyServletWebServerFactory(
+            new Integer(this.getHttpListenerPort()));
         final List<JettyServerCustomizer> serverCustomizerList = Lists.newArrayList();
         final JettyServerCustomizer serverCustomizer = server -> {
             final QueuedThreadPool threadPool = server.getBean(QueuedThreadPool.class);
@@ -74,5 +77,11 @@ public class BeanConfiguration {
         serverCustomizerList.add(serverCustomizer);
         jettyServlet.setServerCustomizers(serverCustomizerList);
         return jettyServlet;
+    }
+
+    @VisibleForTesting
+    protected String getHttpListenerPort() {
+        return (CommonUtils.getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT") != null) ? CommonUtils
+            .getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT") : DEFAULT_HTTP_LISTENER_PORT;
     }
 }

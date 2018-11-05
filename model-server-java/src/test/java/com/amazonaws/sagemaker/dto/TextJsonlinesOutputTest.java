@@ -7,7 +7,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TextJsonOutputTest {
+public class TextJsonlinesOutputTest {
 
     private ObjectMapper mapper;
 
@@ -18,19 +18,19 @@ public class TextJsonOutputTest {
 
     @Test
     public void testStandardJsonOutputObjectCreation() {
-        TextJsonOutput textJsonOutputTest = new TextJsonOutput("this is spark ml server");
-        Assert.assertEquals(textJsonOutputTest.getSource(), "this is spark ml server");
+        TextJsonlinesOutput textJsonlinesOutputTest = new TextJsonlinesOutput("this is spark ml server");
+        Assert.assertEquals(textJsonlinesOutputTest.getSource(), "this is spark ml server");
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullInputPassedToConstructor() {
-        new TextJsonOutput(null);
+        new TextJsonlinesOutput(null);
     }
 
     @Test
     public void testParseStandardJsonOutput() throws IOException {
         String inputJson = IOUtils.toString(this.getClass().getResourceAsStream("text_json_out.json"), "UTF-8");
-        TextJsonOutput sjo = mapper.readValue(inputJson, TextJsonOutput.class);
+        TextJsonlinesOutput sjo = mapper.readValue(inputJson, TextJsonlinesOutput.class);
         Assert.assertEquals(sjo.getSource(), "this is spark ml server");
     }
 

@@ -10,9 +10,9 @@ import com.amazonaws.sagemaker.serde.ResponseSerializer;
 import com.amazonaws.sagemaker.type.AdditionalMimeType;
 import com.amazonaws.sagemaker.type.StructureType;
 import com.amazonaws.sagemaker.utils.CommonUtils;
-import com.amazonaws.sagemaker.utils.ScalaAbstractionUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -31,6 +31,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * The Spring controller class which implements the APIs
+ */
 @RestController
 public class ServingController {
 
@@ -51,11 +54,20 @@ public class ServingController {
         this.typeConverter = Preconditions.checkNotNull(typeConverter);
     }
 
+    /**
+     * Implements the health check GET API
+     * @return ResponseEntity with status 200
+     */
     @RequestMapping(path = "/ping", method = GET)
     public ResponseEntity performShallowHealthCheck() {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Implements the Batch Execution GET Parameter API
+     * @return ResponseEntity with body as the expected payload JSON & status 200
+     * @throws JsonProcessingException
+     */
     @RequestMapping(path = "/execution-parameters", method = GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity returnBatchExecutionParameter() throws JsonProcessingException {
         final BatchExecutionParameter batchParam = new BatchExecutionParameter(CommonUtils.getNumberOfThreads(1),
@@ -64,6 +76,12 @@ public class ServingController {
         return ResponseEntity.ok(responseStr);
     }
 
+    /**
+     * Implements the invocations POST API
+     * @param sro, the request object
+     * @param accept, accept parameter from request
+     * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
+     */
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> transformRequest(@RequestBody SageMakerRequestObject sro,
         @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -71,15 +89,15 @@ public class ServingController {
             return ResponseEntity.noContent().build();
         }
         try {
-            this.retrieveAndVerifyAccept(accept);
+            final String acceptVal = this.retrieveAndVerifyAccept(accept);
             final DefaultLeapFrame dlf = typeConverter.castInputToLeapFrame(sro);
 
             // Making call to the MLeap executor to get the output
-            final DefaultLeapFrame totalLeapFrame = ScalaAbstractionUtils.transformLeapFrame(mleapTransformer, dlf);
-            final DefaultLeapFrame predictionsLeapFrame = ScalaAbstractionUtils
+            final DefaultLeapFrame totalLeapFrame = CommonUtils.transformLeapFrame(mleapTransformer, dlf);
+            final DefaultLeapFrame predictionsLeapFrame = CommonUtils
                 .selectFromLeapFrame(totalLeapFrame, sro.getOutput().getName());
-            final ArrayRow outputArrayRow = ScalaAbstractionUtils.getOutputArrayRow(predictionsLeapFrame);
-            return transformToHttpResponse(sro, outputArrayRow, accept);
+            final ArrayRow outputArrayRow = CommonUtils.getOutputArrayRow(predictionsLeapFrame);
+            return transformToHttpResponse(sro, outputArrayRow, acceptVal);
 
         } catch (final Exception ex) {
             LOG.error("Error in processing current request", ex);
@@ -87,12 +105,21 @@ public class ServingController {
         }
     }
 
-    private void retrieveAndVerifyAccept(final String acceptFromRequest) {
-        String acceptVal = StringUtils.isNotBlank(acceptFromRequest) ? acceptFromRequest
-            : System.getenv("DEFAULT_INVOKE_ENDPOINT_ACCEPT");
-        if (StringUtils.isNotEmpty(acceptFromRequest) && !VALID_ACCEPT_LIST.contains(acceptVal)) {
-            throw new RuntimeException("Accept value passed via request or environment variable is not valid");
+    @VisibleForTesting
+    protected String retrieveAndVerifyAccept(final String acceptFromRequest) {
+        final String acceptVal = checkEmptyAccept(acceptFromRequest) ? CommonUtils
+            .getEnvironmentVariable("SAGEMAKER_DEFAULT_INVOCATIONS_ACCEPT") : acceptFromRequest;
+        if (StringUtils.isNotEmpty(acceptVal) && !VALID_ACCEPT_LIST.contains(acceptVal)) {
+            throw new IllegalArgumentException("Accept value passed via request or environment variable is not valid");
         }
+        return StringUtils.isNotEmpty(acceptVal) ? acceptVal : AdditionalMimeType.TEXT_CSV.toString();
+    }
+
+    /**
+     * Spring sends the Accept as "*\/*" (star/star) in case accept is not passed via request
+     */
+    private boolean checkEmptyAccept(final String acceptFromRequest) {
+        return (StringUtils.isBlank(acceptFromRequest) || StringUtils.equals(acceptFromRequest, MediaType.ALL_VALUE));
     }
 
     private ResponseEntity<String> transformToHttpResponse(final SageMakerRequestObject sro,
@@ -104,8 +131,7 @@ public class ServingController {
         } else {
             // If not basic type, it can be vector or array type from Spark
             return responseSerializer.sendResponseForList(
-                ScalaAbstractionUtils.getJavaObjectIteratorFromArrayRow(predictionRow, sro.getOutput().getStructure()),
-                accept);
+                CommonUtils.getJavaObjectIteratorFromArrayRow(predictionRow, sro.getOutput().getStructure()), accept);
         }
     }
 

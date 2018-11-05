@@ -44,8 +44,8 @@ public class DataTypeConverterTest {
         ArrayRow testRow = new ArrayRow(Lists.newArrayList(new Integer("1")));
         Assert.assertEquals(new Integer("1"), converter.castMLeapBasicTypeToJavaType(testRow, BasicDataType.INTEGER));
 
-        testRow = new ArrayRow(Lists.newArrayList(new Float("1.0")));
-        Assert.assertEquals(new Float("1.0"), converter.castMLeapBasicTypeToJavaType(testRow, BasicDataType.FLOAT));
+        testRow = new ArrayRow(Lists.newArrayList(new Double("1.0")));
+        Assert.assertEquals(new Double("1.0"), converter.castMLeapBasicTypeToJavaType(testRow, BasicDataType.FLOAT));
 
         testRow = new ArrayRow(Lists.newArrayList(new Long("1")));
         Assert.assertEquals(new Long("1"), converter.castMLeapBasicTypeToJavaType(testRow, BasicDataType.LONG));

@@ -1,5 +1,9 @@
 package com.amazonaws.sagemaker.type;
 
+/**
+ * Basic data types supported for each column in the input. Each column can be an individual value or an Array/Vector
+ * (List) * of this.
+ */
 public final class BasicDataType {
 
     public static final String BOOLEAN = "boolean";

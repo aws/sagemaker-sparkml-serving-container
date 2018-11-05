@@ -5,12 +5,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import java.util.List;
 
-public class StandardJsonOutput {
+/**
+ * POJO class to represent the standard JSONlines output format for SageMaker built-in algorithms.
+ */
+public class StandardJsonlinesOutput {
 
     private List<Object> features;
 
     @JsonCreator
-    public StandardJsonOutput(@JsonProperty("features") List<Object> features) {
+    public StandardJsonlinesOutput(@JsonProperty("features") List<Object> features) {
         this.features = Preconditions.checkNotNull(features);
     }
 
