@@ -3,6 +3,7 @@ package com.amazonaws.sagemaker.converter;
 import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.type.BasicDataType;
 import com.amazonaws.sagemaker.type.StructureType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -36,13 +37,14 @@ public class DataTypeConverter {
     }
 
 
-    public DefaultLeapFrame convertInputToLeapFrame(final SageMakerRequestObject sro) {
+    public DefaultLeapFrame castInputToLeapFrame(final SageMakerRequestObject sro) {
 
-        final List<StructField> structFieldList = sro.getInput().stream().map(sc -> new StructField(sc.getName(),
-            this.castInputToMLeapInputType(sc.getType(), sc.getStructure()))).collect(Collectors.toList());
-        final List<Object> valueList = sro.getInput().stream().map(sc -> this.castInputToJavaType(sc.getType(),
-            sc.getStructure(),
-            sc.getVal())).collect(Collectors.toList());
+        final List<StructField> structFieldList = sro.getInput().stream()
+            .map(sc -> new StructField(sc.getName(), this.castInputToMLeapInputType(sc.getType(), sc.getStructure())))
+            .collect(Collectors.toList());
+        final List<Object> valueList = sro.getInput().stream()
+            .map(sc -> this.castInputToJavaType(sc.getType(), sc.getStructure(), sc.getVal()))
+            .collect(Collectors.toList());
 
         final StructType schema = leapFrameBuilder.createSchema(structFieldList);
         final Row currentRow = support.createRowFromIterable(valueList);
@@ -73,12 +75,13 @@ public class DataTypeConverter {
             case BasicDataType.STRING:
                 return predictionRow.getString(0);
             default:
-                return null;
+                throw new IllegalArgumentException("Given type is not supported");
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Object castInputToJavaType(final String type, final String structure, final Object value) {
+    @VisibleForTesting
+    protected Object castInputToJavaType(final String type, final String structure, final Object value) {
         if (StringUtils.isBlank(structure) || StringUtils.equals(structure, StructureType.BASIC)) {
             switch (type) {
                 case BasicDataType.INTEGER:
@@ -98,18 +101,21 @@ public class DataTypeConverter {
                 case BasicDataType.STRING:
                     return value.toString();
                 default:
-                    return null;
+                    throw new IllegalArgumentException("Given type is not supported");
             }
         } else {
-            final List<Object> listOfObjects = (List<Object>) value;
+            List<Object> listOfObjects;
+            try {
+                listOfObjects = (List<Object>) value;
+            } catch (ClassCastException cce) {
+                throw new IllegalArgumentException("Input val is not a list but struct passed is vector or array");
+            }
             switch (type) {
                 case BasicDataType.INTEGER:
                     return listOfObjects.stream().map(elem -> (Integer) elem).collect(Collectors.toList());
                 case BasicDataType.LONG:
                     return listOfObjects.stream().map(elem -> (Long) elem).collect(Collectors.toList());
                 case BasicDataType.FLOAT:
-                    return listOfObjects.stream().map(elem -> ((Double) elem).floatValue())
-                        .collect(Collectors.toList());
                 case BasicDataType.DOUBLE:
                     return listOfObjects.stream().map(elem -> (Double) elem).collect(Collectors.toList());
                 case BasicDataType.BOOLEAN:
@@ -121,13 +127,14 @@ public class DataTypeConverter {
                 case BasicDataType.STRING:
                     return listOfObjects.stream().map(elem -> (String) elem).collect(Collectors.toList());
                 default:
-                    return null;
+                    throw new IllegalArgumentException("Given type is not supported");
             }
 
         }
     }
 
-    private DataType castInputToMLeapInputType(final String type, final String structure) {
+    @VisibleForTesting
+    protected DataType castInputToMLeapInputType(final String type, final String structure) {
         BasicType basicType;
         switch (type) {
             case BasicDataType.INTEGER:

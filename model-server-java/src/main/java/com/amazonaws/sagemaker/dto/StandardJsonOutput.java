@@ -18,5 +18,4 @@ public class StandardJsonOutput {
         return features;
     }
 
-
 }

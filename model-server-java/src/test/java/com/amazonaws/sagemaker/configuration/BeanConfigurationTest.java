@@ -1,24 +1,24 @@
 package com.amazonaws.sagemaker.configuration;
 
-import java.nio.file.NoSuchFileException;
+import java.io.File;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 
-public class DependencyConfigurationTest {
+public class BeanConfigurationTest {
 
-    private DependencyConfiguration configuration;
+    private BeanConfiguration configuration;
 
     @Before
     public void setup() {
-        configuration = new DependencyConfiguration();
+        configuration = new BeanConfiguration();
     }
 
     @Test
     public void testModelLocationNotNull() {
-        Assert.assertNotNull(configuration.provideModelLocation());
-        Assert.assertEquals(configuration.provideModelLocation(), "/opt/ml/model");
+        Assert.assertNotNull(configuration.provideModelFile());
+        Assert.assertEquals(configuration.provideModelFile(), new File("/opt/ml/model"));
     }
 
     @Test
@@ -47,19 +47,18 @@ public class DependencyConfigurationTest {
     }
 
     //We expect the test to fail with an error that the model artifact file is not present, not before that
-    @Test (expected= NoSuchFileException.class)
+    @Test
     public void testTransformerNotNull() {
-        Assert.assertNotNull(configuration
-            .provideTransformer(configuration.provideModelLocation(), configuration.provideBundleBuilder(),
-                configuration.provideMleapContext(configuration.provideContextBuilder())));
+        File dummyMLeapFile = new File(this.getClass().getResource("model").getFile());
+        Assert.assertNotNull(configuration.provideTransformer(dummyMLeapFile, configuration.provideBundleBuilder(),
+            configuration.provideMleapContext(configuration.provideContextBuilder())));
     }
 
     @Test
     public void testJettyServletWebServerFactoryNotNull() {
         JettyServletWebServerFactory jettyServletTest = configuration.provideJettyServletWebServerFactory();
         final String listenerPort =
-            (System.getenv("SAGEMAKER_BIND_TO_PORT") != null) ? System.getenv("SAGEMAKER_BIND_TO_PORT")
-                : "8080";
+            (System.getenv("SAGEMAKER_BIND_TO_PORT") != null) ? System.getenv("SAGEMAKER_BIND_TO_PORT") : "8080";
         Assert.assertEquals((int) new Integer(listenerPort), jettyServletTest.getPort());
         Assert.assertNotNull(jettyServletTest.getServerCustomizers());
     }

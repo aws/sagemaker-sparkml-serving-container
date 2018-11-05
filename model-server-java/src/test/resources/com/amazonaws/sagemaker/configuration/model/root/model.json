@@ -1,0 +1,9 @@
+{
+  "op": "pipeline",
+  "attributes": {
+    "nodes": {
+      "string": [],
+      "type": "list"
+    }
+  }
+}

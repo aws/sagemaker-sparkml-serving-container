@@ -70,6 +70,9 @@ public class SageMakerRequestObjectTest {
         Assert.assertEquals(sro.getInput().get(0).getType(), "int");
         Assert.assertEquals(sro.getInput().get(1).getType(), "string");
         Assert.assertEquals(sro.getInput().get(2).getType(), "double");
+        Assert.assertEquals(sro.getInput().get(0).getStructure(), "basic");
+        Assert.assertEquals(sro.getInput().get(1).getStructure(), "basic");
+        Assert.assertEquals(sro.getInput().get(2).getStructure(), "basic");
         Assert.assertEquals(sro.getOutput().getName(), "features");
         Assert.assertEquals(sro.getOutput().getType(), "double");
     }

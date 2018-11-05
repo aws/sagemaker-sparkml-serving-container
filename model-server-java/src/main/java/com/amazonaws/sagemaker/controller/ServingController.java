@@ -10,17 +10,14 @@ import com.amazonaws.sagemaker.serde.ResponseSerializer;
 import com.amazonaws.sagemaker.type.AdditionalMimeType;
 import com.amazonaws.sagemaker.type.StructureType;
 import com.amazonaws.sagemaker.utils.CommonUtils;
+import com.amazonaws.sagemaker.utils.ScalaAbstractionUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
-import ml.combust.mleap.runtime.frame.Row;
 import ml.combust.mleap.runtime.frame.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -33,8 +30,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
 
 @RestController
 public class ServingController {
@@ -62,16 +57,11 @@ public class ServingController {
     }
 
     @RequestMapping(path = "/execution-parameters", method = GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity returnBatchExecutionParameter() {
+    public ResponseEntity returnBatchExecutionParameter() throws JsonProcessingException {
         final BatchExecutionParameter batchParam = new BatchExecutionParameter(CommonUtils.getNumberOfThreads(1),
             "SINGLE_RECORD", 5);
-        try {
-            final String responseStr = new ObjectMapper().writeValueAsString(batchParam);
-            return ResponseEntity.ok(responseStr);
-        } catch (JsonProcessingException jse) {
-            LOG.error("Error in producing JSON value for {}", batchParam, jse);
-        }
-        return null;
+        final String responseStr = new ObjectMapper().writeValueAsString(batchParam);
+        return ResponseEntity.ok(responseStr);
     }
 
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -81,49 +71,41 @@ public class ServingController {
             return ResponseEntity.noContent().build();
         }
         try {
-            this.verifyAccept(accept);
-            final DefaultLeapFrame dlf = typeConverter.convertInputToLeapFrame(sro);
-            final Seq<String> predictionColumnSelectionArgs = JavaConverters
-                .asScalaIteratorConverter(Collections.singletonList(sro.getOutput().getName()).iterator()).asScala()
-                .toSeq();
+            this.retrieveAndVerifyAccept(accept);
+            final DefaultLeapFrame dlf = typeConverter.castInputToLeapFrame(sro);
 
             // Making call to the MLeap executor to get the output
-            final DefaultLeapFrame predictions = mleapTransformer.transform(dlf).get()
-                .select(predictionColumnSelectionArgs).get();
-            final Iterator<Row> predictionRowsIterable = JavaConverters.asJavaIterableConverter(predictions.collect())
-                .asJava().iterator();
-            return transformToHttpResponse(sro, predictionRowsIterable, accept);
+            final DefaultLeapFrame totalLeapFrame = ScalaAbstractionUtils.transformLeapFrame(mleapTransformer, dlf);
+            final DefaultLeapFrame predictionsLeapFrame = ScalaAbstractionUtils
+                .selectFromLeapFrame(totalLeapFrame, sro.getOutput().getName());
+            final ArrayRow outputArrayRow = ScalaAbstractionUtils.getOutputArrayRow(predictionsLeapFrame);
+            return transformToHttpResponse(sro, outputArrayRow, accept);
 
         } catch (final Exception ex) {
-            LOG.error("Error in transforming input : {}", sro, ex);
-            return CommonUtils.throwBadRequest(ex.getMessage());
+            LOG.error("Error in processing current request", ex);
+            return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
 
-    private void verifyAccept(final String acceptVal) {
-        if ((StringUtils.isNotEmpty(acceptVal)) && !(VALID_ACCEPT_LIST.contains(acceptVal))) {
-            throw new RuntimeException("Accept value is not valid");
+    private void retrieveAndVerifyAccept(final String acceptFromRequest) {
+        String acceptVal = StringUtils.isNotBlank(acceptFromRequest) ? acceptFromRequest
+            : System.getenv("DEFAULT_INVOKE_ENDPOINT_ACCEPT");
+        if (StringUtils.isNotEmpty(acceptFromRequest) && !VALID_ACCEPT_LIST.contains(acceptVal)) {
+            throw new RuntimeException("Accept value passed via request or environment variable is not valid");
         }
     }
 
     private ResponseEntity<String> transformToHttpResponse(final SageMakerRequestObject sro,
-        final Iterator<Row> predictionRowsIterable, final String accept) throws JsonProcessingException {
-        if (Iterators.size(predictionRowsIterable) == 0) {
-            throw new RuntimeException("MLeap transformer did not produce any result");
-        }
-        // SageMaker input structure only allows to call MLeap transformer for single data point
-        ArrayRow predictionRow = (ArrayRow) (predictionRowsIterable.next());
+        final ArrayRow predictionRow, final String accept) throws JsonProcessingException {
+
         if (StringUtils.equals(sro.getOutput().getStructure(), StructureType.BASIC)) {
             final Object output = typeConverter.castMLeapBasicTypeToJavaType(predictionRow, sro.getOutput().getType());
-            return (output != null) ? responseSerializer.sendResponseForSingleValue(output.toString(), accept) : null;
+            return responseSerializer.sendResponseForSingleValue(output.toString(), accept);
         } else {
             // If not basic type, it can be vector or array type from Spark
-            final Iterator<Object> responseIterator =
-                (StringUtils.equals(sro.getOutput().getStructure(), StructureType.VECTOR)) ? JavaConverters
-                    .asJavaIteratorConverter(predictionRow.getTensor(0).rawValuesIterator()).asJava()
-                    : predictionRow.getList(0).iterator();
-
-            return (responseIterator != null) ? responseSerializer.sendResponseForList(responseIterator, accept) : null;
+            return responseSerializer.sendResponseForList(
+                ScalaAbstractionUtils.getJavaObjectIteratorFromArrayRow(predictionRow, sro.getOutput().getStructure()),
+                accept);
         }
     }
 

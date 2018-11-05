@@ -16,7 +16,8 @@ public class BatchExecutionParameter {
     private Integer maxPayloadInMB;
 
     @JsonCreator
-    public BatchExecutionParameter(Integer maxConcurrentTransforms, String batchStrategy, Integer maxPayloadInMB) {
+    public BatchExecutionParameter(@JsonProperty("MaxConcurrentTransforms") Integer maxConcurrentTransforms,
+        @JsonProperty("BatchStrategy") String batchStrategy, @JsonProperty("MaxPayloadInMB") Integer maxPayloadInMB) {
         this.maxConcurrentTransforms = Preconditions.checkNotNull(maxConcurrentTransforms);
         this.batchStrategy = Preconditions.checkNotNull(batchStrategy);
         this.maxPayloadInMB = Preconditions.checkNotNull(maxPayloadInMB);
