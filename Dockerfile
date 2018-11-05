@@ -2,8 +2,8 @@ FROM openjdk:8
 
 RUN apt-get update && apt-get -y install apt-utils net-tools apt-transport-https wget curl nginx git maven
 
-COPY / /model-server-java
-WORKDIR /model-server-java
+COPY / /sagemaker-sparkml-model-server
+WORKDIR /sagemaker-sparkml-model-server
 
 RUN mvn clean test package
 
