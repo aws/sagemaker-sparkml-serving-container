@@ -9,10 +9,10 @@ phases:
     commands:
     - echo Build started on `date`
     - echo Building the Docker image...
-    - docker build -t spark-sm:cb-java .
-    - docker tag spark-sm:cb-java 686482943557.dkr.ecr.us-west-2.amazonaws.com/spark-sm:cb-java
+    - docker build -t sparkml-mleap:latest .
+    - docker tag sparkml-mleap:latest 686482943557.dkr.ecr.us-west-2.amazonaws.com/sparkml-mleap:latest
   post_build:
     commands:
     - echo Build completed on `date`
     - echo Pushing the Docker image...
-    - docker push 686482943557.dkr.ecr.us-west-2.amazonaws.com/spark-sm:cb-java
+    - docker push 686482943557.dkr.ecr.us-west-2.amazonaws.com/sparkml-mleap:latest
