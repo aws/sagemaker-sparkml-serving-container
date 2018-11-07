@@ -3,7 +3,6 @@ package com.amazonaws.sagemaker.dto;
 
 import com.amazonaws.sagemaker.type.StructureType;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import java.util.Optional;
@@ -12,7 +11,6 @@ import java.util.Optional;
  * POJO to represent single column of Spark data that MLeap will transform. Each column can be a basic value or a List
  * of basic values (for Spark Array or Vector).
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class SingleColumn {
 
     private String name;
