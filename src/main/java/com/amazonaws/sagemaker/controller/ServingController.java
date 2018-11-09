@@ -56,6 +56,7 @@ public class ServingController {
 
     /**
      * Implements the health check GET API
+     *
      * @return ResponseEntity with status 200
      */
     @RequestMapping(path = "/ping", method = GET)
@@ -65,8 +66,8 @@ public class ServingController {
 
     /**
      * Implements the Batch Execution GET Parameter API
+     *
      * @return ResponseEntity with body as the expected payload JSON & status 200
-     * @throws JsonProcessingException
      */
     @RequestMapping(path = "/execution-parameters", method = GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity returnBatchExecutionParameter() throws JsonProcessingException {
@@ -78,13 +79,14 @@ public class ServingController {
 
     /**
      * Implements the invocations POST API
+     *
      * @param sro, the request object
      * @param accept, accept parameter from request
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> transformRequest(@RequestBody SageMakerRequestObject sro,
-        @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        @RequestHeader(value = HttpHeaders.ACCEPT, required = false) String accept) {
         if (sro == null) {
             return ResponseEntity.noContent().build();
         }
