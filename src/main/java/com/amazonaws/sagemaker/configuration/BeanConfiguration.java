@@ -1,6 +1,7 @@
 package com.amazonaws.sagemaker.configuration;
 
-import com.amazonaws.sagemaker.utils.CommonUtils;
+import com.amazonaws.sagemaker.utils.SystemUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.File;
@@ -24,13 +25,13 @@ import org.springframework.context.annotation.Bean;
 public class BeanConfiguration {
 
     private static final String DEFAULT_HTTP_LISTENER_PORT = "8080";
+    private static final String DEFAULT_MODEL_LOCATION = "/opt/ml/model";
     private static final Integer MAX_CORE_TO_THREAD_RATIO = 10;
     private static final Integer MIN_CORE_TO_THREAD_RATIO = 2;
-    private static final String MODEL_LOCATION = "/opt/ml/model";
 
     @Bean
     public File provideModelFile() {
-        return new File(MODEL_LOCATION);
+        return new File(DEFAULT_MODEL_LOCATION);
     }
 
     @Bean
@@ -59,20 +60,25 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public Transformer provideTransformer(File modelFile, BundleBuilder bundleBuilder, MleapContext mleapContext) {
+    public Transformer provideTransformer(final File modelFile, final BundleBuilder bundleBuilder,
+        final MleapContext mleapContext) {
         return bundleBuilder.load(modelFile, mleapContext).root();
     }
 
     @Bean
-    public JettyServletWebServerFactory provideJettyServletWebServerFactory() {
+    public ObjectMapper provideObjectMapper() {
+        return new ObjectMapper();
+    }
 
+    @Bean
+    public JettyServletWebServerFactory provideJettyServletWebServerFactory() {
         final JettyServletWebServerFactory jettyServlet = new JettyServletWebServerFactory(
             new Integer(this.getHttpListenerPort()));
         final List<JettyServerCustomizer> serverCustomizerList = Lists.newArrayList();
         final JettyServerCustomizer serverCustomizer = server -> {
             final QueuedThreadPool threadPool = server.getBean(QueuedThreadPool.class);
-            threadPool.setMinThreads(CommonUtils.getNumberOfThreads(MIN_CORE_TO_THREAD_RATIO));
-            threadPool.setMaxThreads(CommonUtils.getNumberOfThreads(MAX_CORE_TO_THREAD_RATIO));
+            threadPool.setMinThreads(SystemUtils.getNumberOfThreads(MIN_CORE_TO_THREAD_RATIO));
+            threadPool.setMaxThreads(SystemUtils.getNumberOfThreads(MAX_CORE_TO_THREAD_RATIO));
         };
         serverCustomizerList.add(serverCustomizer);
         jettyServlet.setServerCustomizers(serverCustomizerList);
@@ -81,7 +87,7 @@ public class BeanConfiguration {
 
     @VisibleForTesting
     protected String getHttpListenerPort() {
-        return (CommonUtils.getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT") != null) ? CommonUtils
+        return (SystemUtils.getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT") != null) ? SystemUtils
             .getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT") : DEFAULT_HTTP_LISTENER_PORT;
     }
 }

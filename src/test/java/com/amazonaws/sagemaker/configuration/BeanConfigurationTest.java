@@ -1,9 +1,8 @@
 package com.amazonaws.sagemaker.configuration;
 
-import com.amazonaws.sagemaker.utils.CommonUtils;
+import com.amazonaws.sagemaker.utils.SystemUtils;
 import java.io.File;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -12,18 +11,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(CommonUtils.class)
+@PrepareForTest(SystemUtils.class)
 public class BeanConfigurationTest {
 
     public BeanConfigurationTest() {
     }
 
-    private BeanConfiguration configuration;
-
-    @Before
-    public void setup() {
-        configuration = new BeanConfiguration();
-    }
+    private BeanConfiguration configuration = new BeanConfiguration();
 
     @Test
     public void testModelLocationNotNull() {
@@ -56,12 +50,16 @@ public class BeanConfigurationTest {
         Assert.assertNotNull(configuration.provideLeapFrameBuilderSupport());
     }
 
-    //We expect the test to fail with an error that the model artifact file is not present, not before that
     @Test
     public void testTransformerNotNull() {
         File dummyMLeapFile = new File(this.getClass().getResource("model").getFile());
         Assert.assertNotNull(configuration.provideTransformer(dummyMLeapFile, configuration.provideBundleBuilder(),
             configuration.provideMleapContext(configuration.provideContextBuilder())));
+    }
+
+    @Test
+    public void testObjectMapperNotNull() {
+        Assert.assertNotNull(configuration.provideObjectMapper());
     }
 
     @Test
@@ -76,7 +74,7 @@ public class BeanConfigurationTest {
     @Test
     public void testParsePortFromEnvironment() {
         PowerMockito.mockStatic(System.class);
-        PowerMockito.when(CommonUtils.getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT")).thenReturn("7070");
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_BIND_TO_PORT")).thenReturn("7070");
         Assert.assertEquals(configuration.getHttpListenerPort(), "7070");
     }
 

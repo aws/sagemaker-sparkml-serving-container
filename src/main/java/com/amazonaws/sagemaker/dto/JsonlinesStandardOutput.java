@@ -8,12 +8,12 @@ import java.util.List;
 /**
  * POJO class to represent the standard JSONlines output format for SageMaker built-in algorithms.
  */
-public class StandardJsonlinesOutput {
+public class JsonlinesStandardOutput {
 
     private List<Object> features;
 
     @JsonCreator
-    public StandardJsonlinesOutput(@JsonProperty("features") List<Object> features) {
+    public JsonlinesStandardOutput(@JsonProperty("features") final List<Object> features) {
         this.features = Preconditions.checkNotNull(features);
     }
 

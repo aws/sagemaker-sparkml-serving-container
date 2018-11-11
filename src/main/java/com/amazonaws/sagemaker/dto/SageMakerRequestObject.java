@@ -11,22 +11,22 @@ import java.util.List;
  */
 public class SageMakerRequestObject {
 
-    private List<SingleColumn> input;
-    private SingleColumn output;
+    private DataSchema schema;
+    private List<Object> data;
 
     @JsonCreator
-    public SageMakerRequestObject(@JsonProperty("input") List<SingleColumn> input,
-        @JsonProperty("output") SingleColumn output) {
-        this.input = Preconditions.checkNotNull(input);
-        this.output = Preconditions.checkNotNull(output);
+    public SageMakerRequestObject(@JsonProperty("schema") final DataSchema schema,
+        @JsonProperty("data") final List<Object> data) {
+        // schema can be retrieved from environment variable as well, hence it is not enforced to be null
+        this.schema = schema;
+        this.data = Preconditions.checkNotNull(data);
     }
 
-    public List<SingleColumn> getInput() {
-        return input;
+    public DataSchema getSchema() {
+        return schema;
     }
 
-    public SingleColumn getOutput() {
-        return output;
+    public List<Object> getData() {
+        return data;
     }
-
 }

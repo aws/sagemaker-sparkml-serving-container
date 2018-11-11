@@ -4,33 +4,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-public class TextJsonlinesOutputTest {
+public class JsonlinesTextOutputTest {
 
-    private ObjectMapper mapper;
-
-    @Before
-    public void setup() {
-        mapper = new ObjectMapper();
-    }
+    private ObjectMapper mapper = new ObjectMapper();
 
     @Test
     public void testStandardJsonOutputObjectCreation() {
-        TextJsonlinesOutput textJsonlinesOutputTest = new TextJsonlinesOutput("this is spark ml server");
-        Assert.assertEquals(textJsonlinesOutputTest.getSource(), "this is spark ml server");
+        JsonlinesTextOutput jsonlinesTextOutputTest = new JsonlinesTextOutput("this is spark ml server");
+        Assert.assertEquals(jsonlinesTextOutputTest.getSource(), "this is spark ml server");
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullInputPassedToConstructor() {
-        new TextJsonlinesOutput(null);
+        new JsonlinesTextOutput(null);
     }
 
     @Test
     public void testParseStandardJsonOutput() throws IOException {
         String inputJson = IOUtils.toString(this.getClass().getResourceAsStream("text_json_out.json"), "UTF-8");
-        TextJsonlinesOutput sjo = mapper.readValue(inputJson, TextJsonlinesOutput.class);
+        JsonlinesTextOutput sjo = mapper.readValue(inputJson, JsonlinesTextOutput.class);
         Assert.assertEquals(sjo.getSource(), "this is spark ml server");
     }
 

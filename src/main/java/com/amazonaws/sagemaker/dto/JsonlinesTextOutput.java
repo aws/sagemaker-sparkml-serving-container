@@ -7,12 +7,12 @@ import com.google.common.base.Preconditions;
 /**
  * POJO class to represent the standard JSONlines output format for SageMaker NLP algorithms (BlazingText, Seq2Seq)
  */
-public class TextJsonlinesOutput {
+public class JsonlinesTextOutput {
 
     private String source;
 
     @JsonCreator
-    public TextJsonlinesOutput(@JsonProperty("source") String source) {
+    public JsonlinesTextOutput(@JsonProperty("source") final String source) {
         this.source = Preconditions.checkNotNull(source);
     }
 

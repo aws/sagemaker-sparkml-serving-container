@@ -1,11 +1,14 @@
-package com.amazonaws.sagemaker.converter;
+package com.amazonaws.sagemaker.helper;
 
-import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
+import com.amazonaws.sagemaker.dto.DataSchema;
+import com.amazonaws.sagemaker.dto.ColumnSchema;
 import com.amazonaws.sagemaker.type.BasicDataType;
-import com.amazonaws.sagemaker.type.StructureType;
+import com.amazonaws.sagemaker.type.DataStructureType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 import java.util.stream.Collectors;
 import ml.combust.mleap.core.types.BasicType;
@@ -20,57 +23,90 @@ import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
 import ml.combust.mleap.runtime.frame.Row;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilder;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilderSupport;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Converter class to convert data between input to MLeap expected types and convert back MLeap response to Java types
+ * Converter class to convert data between input to MLeap expected types and convert back MLeap helper to Java types
  * for output.
  */
 @Component
-public class DataTypeConverter {
+public class DataConversionHelper {
 
     private final LeapFrameBuilderSupport support;
     private final LeapFrameBuilder leapFrameBuilder;
 
     @Autowired
-    public DataTypeConverter(LeapFrameBuilderSupport support, LeapFrameBuilder leapFrameBuilder) {
+    public DataConversionHelper(final LeapFrameBuilderSupport support, final LeapFrameBuilder leapFrameBuilder) {
         this.support = Preconditions.checkNotNull(support);
         this.leapFrameBuilder = Preconditions.checkNotNull(leapFrameBuilder);
     }
 
 
     /**
+     * Parses the input payload in CSV format to a list of Objects
+     * @param csvInput, the input received from the request in CSV format
+     * @param schema, the data schema retrieved from environment variable
+     * @return List of Objects, where each Object correspond to one feature of the input data
+     * @throws IOException, if there is an exception thrown in the try-with-resources block
+     */
+    public List<Object> convertCsvToObjectList(final String csvInput, final DataSchema schema) throws IOException {
+        try (final StringReader sr = new StringReader(csvInput)) {
+            final List<Object> valueList = Lists.newArrayList();
+            final CSVParser parser = CSVFormat.DEFAULT.parse(sr);
+            // We don not supporting multiple CSV lines as input currently
+            final CSVRecord record = parser.getRecords().get(0);
+            final int inputLength = schema.getInput().size();
+            for (int idx = 0; idx < inputLength; ++idx) {
+                ColumnSchema sc = schema.getInput().get(idx);
+                // For CSV input, each value is treated as an individual feature by default
+                valueList.add(this.convertInputDataToJavaType(sc.getType(), DataStructureType.BASIC, record.get(idx)));
+            }
+            return valueList;
+        }
+    }
+
+
+    /**
      * Convert input object to DefaultLeapFrame
-     * @param sro, the request object
+     *
+     * @param schema, the input schema received from request or environment variable
+     * @param data , the input data received from request as a list of objects
      * @return the DefaultLeapFrame object which MLeap transformer expects
      */
-    public DefaultLeapFrame castInputToLeapFrame(final SageMakerRequestObject sro) {
+    public DefaultLeapFrame convertInputToLeapFrame(final DataSchema schema, final List<Object> data) {
 
-        final List<StructField> structFieldList = sro.getInput().stream()
-            .map(sc -> new StructField(sc.getName(), this.castInputToMLeapInputType(sc.getType(), sc.getStructure())))
-            .collect(Collectors.toList());
-        final List<Object> valueList = sro.getInput().stream()
-            .map(sc -> this.castInputToJavaType(sc.getType(), sc.getStructure(), sc.getVal()))
-            .collect(Collectors.toList());
+        final int inputLength = schema.getInput().size();
+        final List<StructField> structFieldList = Lists.newArrayList();
+        final List<Object> valueList = Lists.newArrayList();
+        for (int idx = 0; idx < inputLength; ++idx) {
+            ColumnSchema sc = schema.getInput().get(idx);
+            structFieldList
+                .add(new StructField(sc.getName(), this.convertInputToMLeapInputType(sc.getType(), sc.getStruct())));
+            valueList.add(this.convertInputDataToJavaType(sc.getType(), sc.getStruct(), data.get(idx)));
+        }
 
-        final StructType schema = leapFrameBuilder.createSchema(structFieldList);
+        final StructType mleapSchema = leapFrameBuilder.createSchema(structFieldList);
         final Row currentRow = support.createRowFromIterable(valueList);
 
         final List<Row> rows = Lists.newArrayList();
         rows.add(currentRow);
 
-        return leapFrameBuilder.createFrame(schema, rows);
+        return leapFrameBuilder.createFrame(mleapSchema, rows);
     }
 
     /**
-     * Convert basic types in the MLeap response to Java types for output.
+     * Convert basic types in the MLeap helper to Java types for output.
+     *
      * @param predictionRow, the ArrayRow from MLeapResponse
-     * @param type, the basic type to which the response should be casted, provided by user via input
+     * @param type, the basic type to which the helper should be casted, provided by user via input
      * @return the proper Java type
      */
-    public Object castMLeapBasicTypeToJavaType(final ArrayRow predictionRow, final String type) {
+    public Object convertMLeapBasicTypeToJavaType(final ArrayRow predictionRow, final String type) {
         switch (type) {
             case BasicDataType.INTEGER:
                 return predictionRow.getInt(0);
@@ -94,8 +130,8 @@ public class DataTypeConverter {
 
     @SuppressWarnings("unchecked")
     @VisibleForTesting
-    protected Object castInputToJavaType(final String type, final String structure, final Object value) {
-        if (StringUtils.isBlank(structure) || StringUtils.equals(structure, StructureType.BASIC)) {
+    protected Object convertInputDataToJavaType(final String type, final String structure, final Object value) {
+        if (StringUtils.isBlank(structure) || StringUtils.equals(structure, DataStructureType.BASIC)) {
             switch (type) {
                 case BasicDataType.INTEGER:
                     return new Integer(value.toString());
@@ -147,7 +183,7 @@ public class DataTypeConverter {
     }
 
     @VisibleForTesting
-    protected DataType castInputToMLeapInputType(final String type, final String structure) {
+    protected DataType convertInputToMLeapInputType(final String type, final String structure) {
         BasicType basicType;
         switch (type) {
             case BasicDataType.INTEGER:
@@ -182,11 +218,11 @@ public class DataTypeConverter {
         }
         if (StringUtils.isNotBlank(structure)) {
             switch (structure) {
-                case StructureType.VECTOR:
+                case DataStructureType.VECTOR:
                     return new TensorType(basicType, true);
-                case StructureType.ARRAY:
+                case DataStructureType.ARRAY:
                     return new ListType(basicType, true);
-                case StructureType.BASIC:
+                case DataStructureType.BASIC:
                     return new ScalarType(basicType, true);
             }
         }

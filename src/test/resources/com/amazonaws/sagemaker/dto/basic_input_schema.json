@@ -2,18 +2,15 @@
   "input": [
     {
       "name": "name_1",
-      "type": "int",
-      "val": 1
+      "type": "int"
     },
     {
       "name": "name_2",
-      "type": "string",
-      "val": "C"
+      "type": "string"
     },
     {
       "name": "name_3",
-      "type": "double",
-      "val": 38.0
+      "type": "double"
     }
   ],
   "output": {

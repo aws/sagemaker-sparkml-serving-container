@@ -1,39 +1,46 @@
-package com.amazonaws.sagemaker.serde;
+package com.amazonaws.sagemaker.helper;
 
-import com.amazonaws.sagemaker.dto.StandardJsonlinesOutput;
-import com.amazonaws.sagemaker.dto.TextJsonlinesOutput;
-import com.amazonaws.sagemaker.type.AdditionalMimeType;
+import com.amazonaws.sagemaker.dto.JsonlinesStandardOutput;
+import com.amazonaws.sagemaker.dto.JsonlinesTextOutput;
+import com.amazonaws.sagemaker.type.AdditionalMediaType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringJoiner;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
- * This class contains the logic for converting MLeap response into SageMaker specific response along with status-codes
+ * This class contains the logic for converting MLeap helper into SageMaker specific helper along with status-codes
  */
 @Component
-public class ResponseSerializer {
+public class ResponseHelper {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
+
+    @Autowired
+    public ResponseHelper(final ObjectMapper mapper) {
+        this.mapper = Preconditions.checkNotNull(mapper);
+    }
 
     /**
-     * Sends the response when the output is a single value (e.g. prediction)
+     * Sends the helper when the output is a single value (e.g. prediction)
      *
-     * @param value, the response value
+     * @param value, the helper value
      * @param acceptVal, the accept customer has passed or default (text/csv) if not passed
      * @return Spring ResponseEntity which contains the body and the header
      */
     public ResponseEntity<String> sendResponseForSingleValue(final String value, String acceptVal) {
         if (StringUtils.isEmpty(acceptVal)) {
-            acceptVal = AdditionalMimeType.TEXT_CSV.toString();
+            acceptVal = AdditionalMediaType.TEXT_CSV_VALUE;
         }
-        return StringUtils.equals(acceptVal, AdditionalMimeType.TEXT_CSV.toString()) ? this.getCsvOkResponse(value)
+        return StringUtils.equals(acceptVal, AdditionalMediaType.TEXT_CSV_VALUE) ? this.getCsvOkResponse(value)
             : this.getJsonlinesOkResponse(value);
     }
 
@@ -49,9 +56,9 @@ public class ResponseSerializer {
      */
     public ResponseEntity<String> sendResponseForList(final Iterator<Object> outputDataIterator, String acceptVal)
         throws JsonProcessingException {
-        if (StringUtils.equals(acceptVal, AdditionalMimeType.APPLICATION_JSONLINES.toString())) {
+        if (StringUtils.equals(acceptVal, AdditionalMediaType.APPLICATION_JSONLINES_VALUE)) {
             return this.buildStandardJsonOutputForList(outputDataIterator);
-        } else if (StringUtils.equals(acceptVal, AdditionalMimeType.APPLICATION_JSONLINES_TEXT.toString())) {
+        } else if (StringUtils.equals(acceptVal, AdditionalMediaType.APPLICATION_JSONLINES_TEXT_VALUE)) {
             return this.buildTextJsonOutputForList(outputDataIterator);
         } else {
             return this.buildCsvOutputForList(outputDataIterator);
@@ -72,7 +79,7 @@ public class ResponseSerializer {
         while (outputDataIterator.hasNext()) {
             columns.add(outputDataIterator.next());
         }
-        final StandardJsonlinesOutput jsonOutput = new StandardJsonlinesOutput(columns);
+        final JsonlinesStandardOutput jsonOutput = new JsonlinesStandardOutput(columns);
         final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
         return this.getJsonlinesOkResponse(jsonRepresentation);
     }
@@ -83,21 +90,21 @@ public class ResponseSerializer {
         while (outputDataIterator.hasNext()) {
             stringJoiner.add(outputDataIterator.next().toString());
         }
-        final TextJsonlinesOutput jsonOutput = new TextJsonlinesOutput(stringJoiner.toString());
+        final JsonlinesTextOutput jsonOutput = new JsonlinesTextOutput(stringJoiner.toString());
         final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
         return this.getJsonlinesOkResponse(jsonRepresentation);
     }
 
     private ResponseEntity<String> getCsvOkResponse(final String responseBody) {
         final HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, AdditionalMimeType.TEXT_CSV.toString());
+        headers.set(HttpHeaders.CONTENT_TYPE, AdditionalMediaType.TEXT_CSV_VALUE);
         return ResponseEntity.ok().headers(headers).body(responseBody);
     }
 
-    // We are always responding with the valid format for application/jsonlines, which is a valid JSON
+    // We are always responding with the valid format for application/jsonlines, whicth is a valid JSON
     private ResponseEntity<String> getJsonlinesOkResponse(final String responseBody) {
         final HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, AdditionalMimeType.APPLICATION_JSONLINES.toString());
+        headers.set(HttpHeaders.CONTENT_TYPE, AdditionalMediaType.APPLICATION_JSONLINES_VALUE);
         return ResponseEntity.ok().headers(headers).body(responseBody);
     }
 

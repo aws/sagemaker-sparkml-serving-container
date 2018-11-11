@@ -1,0 +1,27 @@
+{
+  "schema": {
+    "input": [
+      {
+        "name": "name_1",
+        "type": "int",
+        "struct": "vector"
+      },
+      {
+        "name": "name_2",
+        "type": "string",
+        "struct": "basic"
+      },
+      {
+        "name": "name_3",
+        "type": "double",
+        "struct": "array"
+      }
+    ],
+    "output": {
+      "name": "features",
+      "type": "double",
+      "struct": "vector"
+    }
+  },
+  "data": [[1, 2, 3], "C", [38.0, 24.0]]
+}
