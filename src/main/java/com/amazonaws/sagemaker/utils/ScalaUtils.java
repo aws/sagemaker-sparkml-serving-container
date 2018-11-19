@@ -66,7 +66,7 @@ public class ScalaUtils {
     public static Iterator<Object> getJavaObjectIteratorFromArrayRow(final ArrayRow predictionRow,
         final String structure) {
         return (StringUtils.equals(structure, DataStructureType.VECTOR)) ? JavaConverters
-            .asJavaIteratorConverter(predictionRow.getTensor(0).rawValuesIterator()).asJava()
+            .asJavaIteratorConverter(predictionRow.getTensor(0).toDense().rawValuesIterator()).asJava()
             : predictionRow.getList(0).iterator();
     }
 
