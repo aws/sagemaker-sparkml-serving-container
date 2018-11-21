@@ -10,9 +10,9 @@ phases:
     - echo Build started on `date`
     - echo Building the Docker image...
     - docker build -t sagemaker-sparkml-serving:2.2 .
-    - docker tag sagemaker-sparkml-serving:2.2 686482943557.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2
+    - docker tag sagemaker-sparkml-serving:2.2 515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2
   post_build:
     commands:
     - echo Build completed on `date`
     - echo Pushing the Docker image...
-    - docker push 686482943557.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2
+    - docker push 515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2

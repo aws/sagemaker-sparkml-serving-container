@@ -1,6 +1,5 @@
 FROM openjdk:8
 
-# SageMaker inference pipelines
 LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
 
 RUN apt-get update && apt-get -y install apt-utils net-tools apt-transport-https wget curl nginx git maven
