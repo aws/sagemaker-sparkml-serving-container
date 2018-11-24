@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.amazonaws.sagemaker</groupId>
-  <artifactId>sparkml-model-server</artifactId>
+  <artifactId>sparkml-serving</artifactId>
   <version>1.0-SNAPSHOT</version>
   <build>
     <plugins>
