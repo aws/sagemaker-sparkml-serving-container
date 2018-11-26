@@ -26,7 +26,7 @@ Table of Contents
 How to use
 ==========
 
-SageMaker SparkML Serving Container takes a code-free approach for performing inference. You need to pass a `schema` specifying the structure of input columns and output column. The web server will return you the contents of the output column in a specific format depending on `content-type` and `Accept`.
+SageMaker SparkML Serving Container takes a code-free approach for performing inference. You need to pass a schema specifying the structure of input columns and output column. The web server will return you the contents of the output column in a specific format depending on `content-type` and `Accept`.
 
 Procedure to pass the schema
 ----------------------------
@@ -101,10 +101,10 @@ If a column is of type `basic`, then you do not need to pass any additional info
 
 Request Structure
 -----------------
-SparkML Serving Container can parse requests in both `text/csv` and `application/json` format. In case the schema is passed via an environment variable, the request should just contain the payload unless you want to override the schema for a specific request.
+SageMaker SparkML Serving Container can parse requests in both `text/csv` and `application/json` format. In case the schema is passed via an environment variable, the request should just contain the payload unless you want to override the schema for a specific request.
 
 ### CSV
-For CSV, the request should be passed with `content-type` as `text/csv` and `schema` should be passed via environment variable. In case of CSV input, each input column is treated as `basic` type because you can not have nested data structures in CSV. If your input payload contains one or more columns with `struct` as `vector` or `array`, you have to pass the request payload using JSON.
+For CSV, the request should be passed with `content-type` as `text/csv` and schema should be passed via environment variable. In case of CSV input, each input column is treated as `basic` type because you can not have nested data structures in CSV. If your input payload contains one or more columns with `struct` as `vector` or `array`, you have to pass the request payload using JSON.
 
 Sample CSV request:
 
@@ -112,13 +112,13 @@ Sample CSV request:
 feature_1,feature_2,feature_3
 ```
 
-String values do not need to be passed with quotes around it. There should not be any space around the comma and the order of the field should match one-to-one with the `input` field of the `schema`.
+String values do not need to be passed with quotes around it. There should not be any space around the comma and the order of the field should match one-to-one with the `input` field of the schema.
 
 ### JSON
-For JSON, the request should be passed with `content-type` as `application/json`. The `schema` can be passed either via an environment variable or as part of the payload.
+For JSON, the request should be passed with `content-type` as `application/json`. The schema can be passed either via an environment variable or as part of the payload.
 
 #### Schema is passed via environment variable
-If `schema` is passed via an environment variable, then the input should be formatted like this:
+If schema is passed via an environment variable, then the input should be formatted like this:
 
 ```
 
@@ -133,7 +133,7 @@ As with standard JSON, string input values has to be encoded with quotes.
 
 #### Schema is passed as part of the request
 
-For JSON input, the `schema` can be passed as part of the input payload as well. All the other rules apply for this as well i.e. if a column is `basic`, then you do not need to pass the `struct` field in the mapping for that column. For this, a sample request would look like the following:
+For JSON input, the schema can be passed as part of the input payload as well. All the other rules apply for this as well i.e. if a column is `basic`, then you do not need to pass the `struct` field in the mapping for that column. For this, a sample request would look like the following:
 
 ```
 {
@@ -204,7 +204,7 @@ SageMaker SparkML Serving Container is built to work seamlessly with SageMaker f
 
 With AWS SDK
 ------------
-If you are using AWS Java SDK or Boto to call SageMaker APIs, then you can pass the SageMaker provided Docker images for this container in all region as part of the [`CreateModel`](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateModel.html) API call in the `PrimaryContainer` or `Containers` field. The `schema` should be passed using the `Environment` field of the API. As the schema has quotes, it should be encoded properly so that the JSON parser in the server can parse it during inference. For example, if you are using Boto, you can use Python's `json` library to do a `json.dumps` on the `dict` that holds the schema before passing it via Boto.
+If you are using AWS Java SDK or Boto to call SageMaker APIs, then you can pass the SageMaker provided Docker images for this container in all region as part of the [`CreateModel`](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateModel.html) API call in the `PrimaryContainer` or `Containers` field. The schema should be passed using the `Environment` field of the API. As the schema has quotes, it should be encoded properly so that the JSON parser in the server can parse it during inference. For example, if you are using Boto, you can use Python's `json` library to do a `json.dumps` on the `dict` that holds the schema before passing it via Boto.
 
 Calling `CreateModel` is required for creating a `Model` in SageMaker with this Docker container and the serialized pipeline artifacts which is the stepping stone for all the use cases mentioned above.
 
