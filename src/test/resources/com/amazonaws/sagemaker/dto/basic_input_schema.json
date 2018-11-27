@@ -1,0 +1,20 @@
+{
+  "input": [
+    {
+      "name": "name_1",
+      "type": "int"
+    },
+    {
+      "name": "name_2",
+      "type": "string"
+    },
+    {
+      "name": "name_3",
+      "type": "double"
+    }
+  ],
+  "output": {
+    "name": "features",
+    "type": "double"
+  }
+}
