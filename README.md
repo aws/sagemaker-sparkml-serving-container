@@ -195,6 +195,10 @@ or
 
 This container is expected to be used in conjunction with other [SageMaker built-in algorithms](https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html) for inference pipeline and the output formats resemble the structure those algorithms can work seamlessly with.
 
+Example Notebooks
+-----------------
+
+You can find examples of how to use this in an end-to-end fashion here: [1](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/sagemaker-python-sdk/sparkml_serving_emr_mleap_abalone), [2](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/advanced_functionality/inference_pipeline_sparkml_xgboost_abalone) and [3](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/advanced_functionality/inference_pipeline_sparkml_blazingtext_dbpedia).
 
 Using the Docker image for performing inference with SageMaker
 ==============================================================
