@@ -1,7 +1,7 @@
 Sagemaker SparkML Serving Container
 ===================================
 
-SageMaker SparkML Serving Container lets you deploy an Apache Spark ML Pipeline in [Amazon SageMaker](https://aws.amazon.com/sagemaker/) for real-time, batch prediction and inference pipeline use-cases. It is powered by open-source [MLeap](https://github.com/combust/mleap) library.
+SageMaker SparkML Serving Container lets you deploy an Apache Spark ML Pipeline in [Amazon SageMaker](https://aws.amazon.com/sagemaker/) for real-time, batch prediction and inference pipeline use-cases. The container can be used to deploy a Spark ML Pipeline outside of SageMaker as well. It is powered by open-source [MLeap](https://github.com/combust/mleap) library.
 
 ![Build Status](https://tinyurl.com/y8wdoq3h)
 
