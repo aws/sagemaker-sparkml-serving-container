@@ -14,6 +14,10 @@ MLeap is focussed towards deploying Apache Spark based ML pipelines to productio
 
 SageMaker SparkML Serving Container is primarily built on the underlying Spring Boot based web service and it provides a layer to build a SageMaker compatible Docker image. In addition to using it in SageMaker, you can build the Dockerfile or download SageMaker provided Docker images to perform inference against an MLeap serialized Spark ML Pipeline locally or outside of SageMaker.  
 
+Supported Spark/MLeap version
+=============================
+
+Currently SageMaker SparkML Serving is powered by MLeap 0.9.6 and it is tested with Spark major version - 2.2.
 
 Table of Contents
 =================
