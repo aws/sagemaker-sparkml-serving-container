@@ -1,4 +1,4 @@
-FROM openjdk:8
+FROM openjdk:8u181
 
 LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
 
