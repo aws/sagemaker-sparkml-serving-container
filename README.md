@@ -22,7 +22,7 @@ SageMaker SparkML Serving Container is primarily built on the underlying Spring 
 Supported Spark/MLeap version
 =============================
 
-Currently SageMaker SparkML Serving is powered by MLeap 0.9.6 and it is tested with Spark major version - 2.2.
+Currently SageMaker SparkML Serving is powered by MLeap 0.13.0 and it is tested with Spark major version - 2.3.
 
 Table of Contents
 =================
