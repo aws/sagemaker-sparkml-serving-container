@@ -223,20 +223,20 @@ Calling `CreateModel` is required for creating a `Model` in SageMaker with this 
 SageMaker works with Docker images stored in [Amazon ECR](https://aws.amazon.com/ecr/). SageMaker team has prepared and uploaded the Docker images for SageMaker SparkML Serving Container in all regions where SageMaker operates. 
 Region to ECR container URL mapping can be found below. For a mapping from Region to Region Name, please see [here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html).
 
-* us-west-1 = 746614075791.dkr.ecr.us-west-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* us-west-2 = 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2
-* us-east-1 = 683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* us-east-2 = 257758044811.dkr.ecr.us-east-2.amazonaws.com/sagemaker-sparkml-serving:2.2
-* ap-northeast-1 = 354813040037.dkr.ecr.ap-northeast-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* ap-northeast-2 = 366743142698.dkr.ecr.ap-northeast-2.amazonaws.com/sagemaker-sparkml-serving:2.2
-* ap-southeast-1 = 121021644041.dkr.ecr.ap-southeast-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* ap-southeast-2 = 783357654285.dkr.ecr.ap-southeast-2.amazonaws.com/sagemaker-sparkml-serving:2.2
-* ap-south-1 = 720646828776.dkr.ecr.ap-south-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* eu-west-1 = 141502667606.dkr.ecr.eu-west-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* eu-west-2 = 764974769150.dkr.ecr.eu-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2
-* eu-central-1 = 492215442770.dkr.ecr.eu-central-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* ca-central-1 = 341280168497.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-sparkml-serving:2.2
-* us-gov-west-1 = 414596584902.dkr.ecr.us-gov-west-1.amazonaws.com/sagemaker-sparkml-serving:2.2
+* us-west-1 = 746614075791.dkr.ecr.us-west-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* us-west-2 = 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.3
+* us-east-1 = 683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* us-east-2 = 257758044811.dkr.ecr.us-east-2.amazonaws.com/sagemaker-sparkml-serving:2.3
+* ap-northeast-1 = 354813040037.dkr.ecr.ap-northeast-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* ap-northeast-2 = 366743142698.dkr.ecr.ap-northeast-2.amazonaws.com/sagemaker-sparkml-serving:2.3
+* ap-southeast-1 = 121021644041.dkr.ecr.ap-southeast-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* ap-southeast-2 = 783357654285.dkr.ecr.ap-southeast-2.amazonaws.com/sagemaker-sparkml-serving:2.3
+* ap-south-1 = 720646828776.dkr.ecr.ap-south-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* eu-west-1 = 141502667606.dkr.ecr.eu-west-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* eu-west-2 = 764974769150.dkr.ecr.eu-west-2.amazonaws.com/sagemaker-sparkml-serving:2.3
+* eu-central-1 = 492215442770.dkr.ecr.eu-central-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* ca-central-1 = 341280168497.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-sparkml-serving:2.3
+* us-gov-west-1 = 414596584902.dkr.ecr.us-gov-west-1.amazonaws.com/sagemaker-sparkml-serving:2.3
 
 With [SageMaker Python SDK](https://github.com/aws/sagemaker-python-sdk)
 ------------------------------------------------------------------------
@@ -263,7 +263,7 @@ First you need to ensure that have installed [Docker](https://www.docker.com/) o
 In order to build the Docker image, you need to run a single Docker command:
 
 ```
-docker build -t sagemaker-sparkml-serving:2.2 .
+docker build -t sagemaker-sparkml-serving:2.3 .
 ```
 
 #### Running the image locally
@@ -272,7 +272,7 @@ In order to run the Docker image, you need to run the following command. Please 
 The command will start the server on port 8080 and will also pass the schema as an environment variable to the Docker container. Alternatively, you can edit the `Dockerfile` to add `ENV SAGEMAKER_SPARKML_SCHEMA=schema` as well before building the Docker image.
 
 ```
-docker run -p 8080:8080 -e SAGEMAKER_SPARKML_SCHEMA=schema -v /tmp/model:/opt/ml/model sagemaker-sparkml-serving:2.2 serve
+docker run -p 8080:8080 -e SAGEMAKER_SPARKML_SCHEMA=schema -v /tmp/model:/opt/ml/model sagemaker-sparkml-serving:2.3 serve
 ```
 
 #### Invoking with a payload
@@ -287,7 +287,7 @@ or
 curl -i -H "content-type:application/json" -d "{\"data\":[feature_1,\"feature_2\",feature_3]}" http://localhost:8080/invocations
 ```
 
-The `Dockerfile` can be found at the root directory of the package. SageMaker SparkML Serving Container tags the Docker images using the Spark major version it is compatible with. Right now, it only supports Spark 2.2 and as a result, the Docker image is tagged with 2.2. 
+The `Dockerfile` can be found at the root directory of the package. SageMaker SparkML Serving Container tags the Docker images using the Spark major version it is compatible with. Right now, it supports Spark 2.2 and 2.3. 
 
 In order to save the effort of building the Docker image everytime you are making a code change, you can also install [Maven](http://maven.apache.org/) and run `mvn clean package` at your project root to verify if the code is compiling fine and unit tests are running without any issue. 
 
@@ -310,7 +310,7 @@ aws ecr get-login --region us-west-2 --registry-ids 246618743249 --no-include-em
 * Download the Docker image with the following command:
 
 ```
-docker pull 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.2
+docker pull 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:2.3
 ```
 
 For running the Docker image, please see the Running the image locally section from above.
