@@ -23,15 +23,17 @@ import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
 import ml.combust.mleap.runtime.frame.Row;
 import ml.combust.mleap.runtime.frame.Transformer;
+import ml.combust.mleap.runtime.javadsl.LeapFrameSupport;
 import org.apache.commons.lang3.StringUtils;
 import scala.collection.JavaConverters;
-import scala.collection.Seq;
 
 /**
  * Utility class for dealing with Scala to Java conversion related issues. These functionalities are moved to this
  * class so that they can be easily mocked out by PowerMockito.mockStatic while testing the actual classes.
  */
 public class ScalaUtils {
+
+    private final static LeapFrameSupport leapFrameSupport = new LeapFrameSupport();
 
     /**
      * Invokes MLeap transformer object with DefaultLeapFrame and returns DefaultLeapFrame from MLeap helper Try Monad
@@ -53,9 +55,7 @@ public class ScalaUtils {
      * @return the DefaultLeapFrame in helper
      */
     public static DefaultLeapFrame selectFromLeapFrame(final DefaultLeapFrame leapFrame, final String key) {
-        final Seq<String> predictionColumnSelectionArgs = JavaConverters
-            .asScalaIteratorConverter(Collections.singletonList(key).iterator()).asScala().toSeq();
-        return leapFrame.select(predictionColumnSelectionArgs).get();
+        return leapFrameSupport.select(leapFrame, Collections.singletonList(key));
     }
 
     /**
@@ -66,8 +66,7 @@ public class ScalaUtils {
      * @return ArrayRow which can be used to retrieve the original output
      */
     public static ArrayRow getOutputArrayRow(final DefaultLeapFrame leapFrame) {
-        final Iterator<Row> rowIterator = JavaConverters.asJavaIterableConverter(leapFrame.collect()).asJava()
-            .iterator();
+        final Iterator<Row> rowIterator = leapFrameSupport.collect(leapFrame).iterator();
         // SageMaker input structure only allows to call MLeap transformer for single data point
         return (ArrayRow) (rowIterator.next());
     }

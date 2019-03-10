@@ -94,7 +94,7 @@ public class ServingController {
     public ResponseEntity returnBatchExecutionParameter() throws JsonProcessingException {
         final BatchExecutionParameter batchParam = new BatchExecutionParameter(SystemUtils.getNumberOfThreads(1),
             "SINGLE_RECORD", 5);
-        final String responseStr = new ObjectMapper().writeValueAsString(batchParam);
+        final String responseStr = mapper.writeValueAsString(batchParam);
         return ResponseEntity.ok(responseStr);
     }
 
