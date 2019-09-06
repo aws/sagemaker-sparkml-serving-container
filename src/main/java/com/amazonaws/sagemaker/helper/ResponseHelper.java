@@ -66,27 +66,35 @@ public class ResponseHelper {
      * test/resources/com/amazonaws/sagemaker/dto for example output format or SageMaker built-in algorithms
      * documentaiton to know about the output format.
      *
-     * @param outputDataIterator, data iterator for raw output values in case output is an Array or Vector
+     * @param outputDatasIterator, data iterator for raw output values in case output is an Array or Vector
      * @param acceptVal, the accept customer has passed or default (text/csv) if not passed
      * @return Spring ResponseEntity which contains the body and the header.
      */
-    public ResponseEntity<String> sendResponseForList(final Iterator<Object> outputDataIterator, String acceptVal)
+    public ResponseEntity<String> sendResponseForList(final List<Iterator<Object>> outputDatasIterator, String acceptVal)
         throws JsonProcessingException {
         if (StringUtils.equals(acceptVal, AdditionalMediaType.APPLICATION_JSONLINES_VALUE)) {
-            return this.buildStandardJsonOutputForList(outputDataIterator);
+            return this.buildStandardJsonOutputForList(outputDatasIterator.get(0));
         } else if (StringUtils.equals(acceptVal, AdditionalMediaType.APPLICATION_JSONLINES_TEXT_VALUE)) {
-            return this.buildTextJsonOutputForList(outputDataIterator);
+            return this.buildTextJsonOutputForList(outputDatasIterator.get(0));
         } else {
-            return this.buildCsvOutputForList(outputDataIterator);
+            return this.buildCsvOutputForList(outputDatasIterator);
         }
     }
 
-    private ResponseEntity<String> buildCsvOutputForList(final Iterator<Object> outputDataIterator) {
-        final StringJoiner sj = new StringJoiner(",");
-        while (outputDataIterator.hasNext()) {
-            sj.add(outputDataIterator.next().toString());
+    private ResponseEntity<String> buildCsvOutputForList(final List<Iterator<Object>> outputDatasIterator) {
+
+        final StringJoiner sjLineBreaks = new StringJoiner("\n");
+
+        for(Iterator<Object> outputDataIterator : outputDatasIterator)
+        {
+            final StringJoiner sj = new StringJoiner(",");
+            while (outputDataIterator.hasNext()) {
+                sj.add(outputDataIterator.next().toString());
+            }
+            sjLineBreaks.add(sj.toString());
         }
-        return this.getCsvOkResponse(sj.toString());
+
+        return this.getCsvOkResponse(sjLineBreaks.toString());
     }
 
     private ResponseEntity<String> buildStandardJsonOutputForList(final Iterator<Object> outputDataIterator)

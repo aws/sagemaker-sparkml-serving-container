@@ -19,6 +19,8 @@ package com.amazonaws.sagemaker.utils;
 import com.amazonaws.sagemaker.type.DataStructureType;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
 import ml.combust.mleap.runtime.frame.Row;
@@ -65,10 +67,8 @@ public class ScalaUtils {
      * @param leapFrame, the DefaultLeapFrame from which output to be extracted
      * @return ArrayRow which can be used to retrieve the original output
      */
-    public static ArrayRow getOutputArrayRow(final DefaultLeapFrame leapFrame) {
-        final Iterator<Row> rowIterator = leapFrameSupport.collect(leapFrame).iterator();
-        // SageMaker input structure only allows to call MLeap transformer for single data point
-        return (ArrayRow) (rowIterator.next());
+    public static List<Row> getOutputArrayRow(final DefaultLeapFrame leapFrame) {
+        return leapFrameSupport.collect(leapFrame);
     }
 
     /**
@@ -78,7 +78,7 @@ public class ScalaUtils {
      * @param structure, whether it is Spark Vector or Array
      * @return Iterator to raw values of the Vector or Array
      */
-    public static Iterator<Object> getJavaObjectIteratorFromArrayRow(final ArrayRow predictionRow,
+    public static Iterator<Object> getJavaObjectIteratorFromArrayRow(final Row predictionRow,
         final String structure) {
         return (StringUtils.equals(structure, DataStructureType.VECTOR)) ? JavaConverters
             .asJavaIteratorConverter(predictionRow.getTensor(0).toDense().rawValuesIterator()).asJava()

@@ -70,19 +70,26 @@ public class DataConversionHelper {
      * @return List of Objects, where each Object correspond to one feature of the input data
      * @throws IOException, if there is an exception thrown in the try-with-resources block
      */
-    public List<Object> convertCsvToObjectList(final String csvInput, final DataSchema schema) throws IOException {
+    public List<List<Object>> convertCsvToObjectList(final String csvInput, final DataSchema schema) throws IOException {
         try (final StringReader sr = new StringReader(csvInput)) {
-            final List<Object> valueList = Lists.newArrayList();
             final CSVParser parser = CSVFormat.DEFAULT.parse(sr);
             // We don not supporting multiple CSV lines as input currently
-            final CSVRecord record = parser.getRecords().get(0);
+            final List<CSVRecord> records = parser.getRecords();
             final int inputLength = schema.getInput().size();
-            for (int idx = 0; idx < inputLength; ++idx) {
-                ColumnSchema sc = schema.getInput().get(idx);
-                // For CSV input, each value is treated as an individual feature by default
-                valueList.add(this.convertInputDataToJavaType(sc.getType(), DataStructureType.BASIC, record.get(idx)));
+
+            final List<List<Object>> returnList = Lists.newArrayList();
+
+            for(CSVRecord record : records) {
+                final List<Object> valueList = Lists.newArrayList();
+                for (int idx = 0; idx < inputLength; ++idx) {
+                    ColumnSchema sc = schema.getInput().get(idx);
+                    // For CSV input, each value is treated as an individual feature by default
+                    valueList.add(this.convertInputDataToJavaType(sc.getType(), DataStructureType.BASIC, record.get(idx)));
+                }
+                returnList.add(valueList);
             }
-            return valueList;
+
+            return returnList;
         }
     }
 
@@ -91,28 +98,42 @@ public class DataConversionHelper {
      * Convert input object to DefaultLeapFrame
      *
      * @param schema, the input schema received from request or environment variable
-     * @param data , the input data received from request as a list of objects
+     * @param datas , the input datas received from request as a list of objects
      * @return the DefaultLeapFrame object which MLeap transformer expects
      */
-    public DefaultLeapFrame convertInputToLeapFrame(final DataSchema schema, final List<Object> data) {
+    public DefaultLeapFrame convertInputToLeapFrame(final DataSchema schema, final List<List<Object>> datas) {
 
         final int inputLength = schema.getInput().size();
         final List<StructField> structFieldList = Lists.newArrayList();
-        final List<Object> valueList = Lists.newArrayList();
+
         for (int idx = 0; idx < inputLength; ++idx) {
             ColumnSchema sc = schema.getInput().get(idx);
             structFieldList
-                .add(new StructField(sc.getName(), this.convertInputToMLeapInputType(sc.getType(), sc.getStruct())));
+                    .add(new StructField(sc.getName(), this.convertInputToMLeapInputType(sc.getType(), sc.getStruct())));
+        }
+        final StructType mleapSchema = leapFrameBuilder.createSchema(structFieldList);
+
+        final List<Row> rows = Lists.newArrayList();
+
+        for(Object data : datas)
+        {
+            final Row currentRow = getRow(schema, (List) data, inputLength);
+
+            rows.add(currentRow);
+        }
+
+        return leapFrameBuilder.createFrame(mleapSchema, rows);
+    }
+
+    private Row getRow(DataSchema schema, List<Object> data, int inputLength) {
+        final List<Object> valueList = Lists.newArrayList();
+
+        for (int idx = 0; idx < inputLength; ++idx) {
+            ColumnSchema sc = schema.getInput().get(idx);
             valueList.add(this.convertInputDataToJavaType(sc.getType(), sc.getStruct(), data.get(idx)));
         }
 
-        final StructType mleapSchema = leapFrameBuilder.createSchema(structFieldList);
-        final Row currentRow = support.createRowFromIterable(valueList);
-
-        final List<Row> rows = Lists.newArrayList();
-        rows.add(currentRow);
-
-        return leapFrameBuilder.createFrame(mleapSchema, rows);
+        return support.createRowFromIterable(valueList);
     }
 
     /**
@@ -122,7 +143,7 @@ public class DataConversionHelper {
      * @param type, the basic type to which the helper should be casted, provided by user via input
      * @return the proper Java type
      */
-    public Object convertMLeapBasicTypeToJavaType(final ArrayRow predictionRow, final String type) {
+    public Object convertMLeapBasicTypeToJavaType(final Row predictionRow, final String type) {
         switch (type) {
             case BasicDataType.INTEGER:
                 return predictionRow.getInt(0);
