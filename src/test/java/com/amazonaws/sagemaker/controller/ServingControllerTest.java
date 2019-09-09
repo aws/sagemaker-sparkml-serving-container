@@ -213,6 +213,19 @@ class ServingControllerTest {
     }
 
     @Test
+    public void testJsonLinesApiWithListInput() {
+        schemaInJson = "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
+                + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
+        List<Object> outputResponse = Lists.newArrayList(1, 2, 0.345);
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponse.iterator());
+        final ResponseEntity<String> output = controller.transformRequestJsonLines("[1,2.0,\"TEST\"]".getBytes(), "text/csv");
+        Assert.assertEquals(output.getBody(), "1,2,0.345");
+    }
+
+    @Test
     public void testCsvApiWithNullInput() {
         PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
         final ResponseEntity<String> output = controller.transformRequestCsv(null, "text/csv");

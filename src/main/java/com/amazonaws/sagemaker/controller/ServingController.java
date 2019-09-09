@@ -34,6 +34,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -103,7 +104,7 @@ public class ServingController {
     }
 
     /**
-     * Implements the invocations POST API for application/json input
+     * Implements the invocations POST API for application/jsonlines input
      *
      * @param sro, the request object
      * @param accept, accept parameter from request
@@ -111,7 +112,7 @@ public class ServingController {
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> transformRequestJson(@RequestBody final SageMakerRequestObject sro,
-        @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
+                                                       @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
         if (sro == null) {
             LOG.error("Input passed to the request is empty");
             return ResponseEntity.noContent().build();
@@ -120,6 +121,37 @@ public class ServingController {
             final String acceptVal = this.retrieveAndVerifyAccept(accept);
             final DataSchema schema = this.retrieveAndVerifySchema(sro.getSchema(), mapper);
             return this.processInputData(Collections.singletonList(sro.getData()), schema, acceptVal);
+        } catch (final Exception ex) {
+            LOG.error("Error in processing current request", ex);
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+    /**
+     * Implements the invocations POST API for application/json input
+     *
+     * @param jsonLines, lines of json values
+     * @param accept, accept parameter from request
+     * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
+     */
+    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
+    public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
+        @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
+        if (jsonLines == null) {
+            LOG.error("Input passed to the request is empty");
+            return ResponseEntity.noContent().build();
+        }
+        try {
+            final String acceptVal = this.retrieveAndVerifyAccept(accept);
+            final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
+            final String jsonStringLines[] = new String(jsonLines).split("\\r?\\n");
+            final List<List<Object>> inputDatas = new ArrayList();
+            for(String jsonStringLine : jsonStringLines) {
+                final ObjectMapper mapper = new ObjectMapper();
+                final List<Object> data = mapper.readValue(jsonStringLine, List.class);
+                inputDatas.add(data);
+            }
+            return this.processInputData(inputDatas, schema, acceptVal);
         } catch (final Exception ex) {
             LOG.error("Error in processing current request", ex);
             return ResponseEntity.badRequest().body(ex.getMessage());
