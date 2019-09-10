@@ -23,6 +23,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringJoiner;
@@ -73,9 +75,9 @@ public class ResponseHelper {
     public ResponseEntity<String> sendResponseForList(final List<Iterator<Object>> outputDatasIterator, String acceptVal)
         throws JsonProcessingException {
         if (StringUtils.equals(acceptVal, AdditionalMediaType.APPLICATION_JSONLINES_VALUE)) {
-            return this.buildStandardJsonOutputForList(outputDatasIterator.get(0));
+            return this.buildStandardJsonOutputForList(outputDatasIterator);
         } else if (StringUtils.equals(acceptVal, AdditionalMediaType.APPLICATION_JSONLINES_TEXT_VALUE)) {
-            return this.buildTextJsonOutputForList(outputDatasIterator.get(0));
+            return this.buildTextJsonOutputForList(outputDatasIterator);
         } else {
             return this.buildCsvOutputForList(outputDatasIterator);
         }
@@ -97,25 +99,36 @@ public class ResponseHelper {
         return this.getCsvOkResponse(sjLineBreaks.toString());
     }
 
-    private ResponseEntity<String> buildStandardJsonOutputForList(final Iterator<Object> outputDataIterator)
+    private ResponseEntity<String> buildStandardJsonOutputForList(final List<Iterator<Object>> outputDatasIterator)
         throws JsonProcessingException {
-        final List<Object> columns = Lists.newArrayList();
-        while (outputDataIterator.hasNext()) {
-            columns.add(outputDataIterator.next());
+
+        List<JsonlinesStandardOutput> jsonLinesList = new ArrayList<>();
+        for(Iterator<Object> outputDataIterator : outputDatasIterator) {
+            final List<Object> columns = Lists.newArrayList();
+            while (outputDataIterator.hasNext()) {
+                columns.add(outputDataIterator.next());
+            }
+            final JsonlinesStandardOutput jsonOutput = new JsonlinesStandardOutput(columns);
+            jsonLinesList.add(jsonOutput);
         }
-        final JsonlinesStandardOutput jsonOutput = new JsonlinesStandardOutput(columns);
-        final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
+        final String jsonRepresentation = mapper.writeValueAsString(jsonLinesList);
         return this.getJsonlinesOkResponse(jsonRepresentation);
     }
 
-    private ResponseEntity<String> buildTextJsonOutputForList(final Iterator<Object> outputDataIterator)
+    private ResponseEntity<String> buildTextJsonOutputForList(final List<Iterator<Object>> outputDatasIterator)
         throws JsonProcessingException {
-        final StringJoiner stringJoiner = new StringJoiner(" ");
-        while (outputDataIterator.hasNext()) {
-            stringJoiner.add(outputDataIterator.next().toString());
+
+        List<JsonlinesTextOutput> jsonLinesList = new ArrayList<>();
+        for(Iterator<Object> outputDataIterator : outputDatasIterator) {
+            final StringJoiner stringJoiner = new StringJoiner(" ");
+            while (outputDataIterator.hasNext()) {
+                stringJoiner.add(outputDataIterator.next().toString());
+            }
+            final JsonlinesTextOutput jsonOutput = new JsonlinesTextOutput(stringJoiner.toString());
+            jsonLinesList.add(jsonOutput);
         }
-        final JsonlinesTextOutput jsonOutput = new JsonlinesTextOutput(stringJoiner.toString());
-        final String jsonRepresentation = mapper.writeValueAsString(jsonOutput);
+
+        final String jsonRepresentation = mapper.writeValueAsString(jsonLinesList);
         return this.getJsonlinesOkResponse(jsonRepresentation);
     }
 

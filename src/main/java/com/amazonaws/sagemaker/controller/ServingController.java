@@ -148,8 +148,8 @@ public class ServingController {
             final List<List<Object>> inputDatas = new ArrayList();
             for(String jsonStringLine : jsonStringLines) {
                 final ObjectMapper mapper = new ObjectMapper();
-                final List<Object> data = mapper.readValue(jsonStringLine, List.class);
-                inputDatas.add(data);
+                final SageMakerRequestObject sro = mapper.readValue(jsonStringLine, SageMakerRequestObject.class);
+                inputDatas.add(sro.getData());
             }
             return this.processInputData(inputDatas, schema, acceptVal);
         } catch (final Exception ex) {
