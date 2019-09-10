@@ -77,7 +77,7 @@ public class ResponseHelperTest {
     public void testListOutputJsonlines() throws JsonProcessingException {
         ResponseEntity<String> outputTest = responseHelperTest
             .sendResponseForList(Collections.singletonList(dummyResponse.iterator()), "application/jsonlines");
-        Assert.assertEquals(outputTest.getBody(), "{\"features\":[1,0.2]}");
+        Assert.assertEquals(outputTest.getBody(), "[{\"features\":[1,0.2]}]");
         Assert.assertEquals(Objects.requireNonNull(outputTest.getHeaders().get(HttpHeaders.CONTENT_TYPE)).get(0),
             "application/jsonlines");
     }
@@ -87,7 +87,7 @@ public class ResponseHelperTest {
         dummyResponse = Lists.newArrayList("this", "is", "spark", "ml", "server");
         ResponseEntity<String> outputTest = responseHelperTest
             .sendResponseForList(Collections.singletonList(dummyResponse.iterator()), "application/jsonlines;data=text");
-        Assert.assertEquals(outputTest.getBody(), "{\"source\":\"this is spark ml server\"}");
+        Assert.assertEquals(outputTest.getBody(), "[{\"source\":\"this is spark ml server\"}]");
         Assert.assertEquals(Objects.requireNonNull(outputTest.getHeaders().get(HttpHeaders.CONTENT_TYPE)).get(0),
             "application/jsonlines");
     }
