@@ -34,9 +34,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
+import ml.combust.mleap.runtime.frame.Row;
 import ml.combust.mleap.runtime.frame.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -99,7 +104,7 @@ public class ServingController {
     }
 
     /**
-     * Implements the invocations POST API for application/json input
+     * Implements the invocations POST API for application/jsonlines input
      *
      * @param sro, the request object
      * @param accept, accept parameter from request
@@ -107,7 +112,7 @@ public class ServingController {
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> transformRequestJson(@RequestBody final SageMakerRequestObject sro,
-        @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
+                                                       @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
         if (sro == null) {
             LOG.error("Input passed to the request is empty");
             return ResponseEntity.noContent().build();
@@ -115,7 +120,38 @@ public class ServingController {
         try {
             final String acceptVal = this.retrieveAndVerifyAccept(accept);
             final DataSchema schema = this.retrieveAndVerifySchema(sro.getSchema(), mapper);
-            return this.processInputData(sro.getData(), schema, acceptVal);
+            return this.processInputData(Collections.singletonList(sro.getData()), schema, acceptVal);
+        } catch (final Exception ex) {
+            LOG.error("Error in processing current request", ex);
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+    /**
+     * Implements the invocations POST API for application/json input
+     *
+     * @param jsonLines, lines of json values
+     * @param accept, accept parameter from request
+     * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
+     */
+    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
+    public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
+        @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
+        if (jsonLines == null) {
+            LOG.error("Input passed to the request is empty");
+            return ResponseEntity.noContent().build();
+        }
+        try {
+            final String acceptVal = this.retrieveAndVerifyAccept(accept);
+            final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
+            final String jsonStringLines[] = new String(jsonLines).split("\\r?\\n");
+            final List<List<Object>> inputDatas = new ArrayList();
+            for(String jsonStringLine : jsonStringLines) {
+                final ObjectMapper mapper = new ObjectMapper();
+                final SageMakerRequestObject sro = mapper.readValue(jsonStringLine, SageMakerRequestObject.class);
+                inputDatas.add(sro.getData());
+            }
+            return this.processInputData(inputDatas, schema, acceptVal);
         } catch (final Exception ex) {
             LOG.error("Error in processing current request", ex);
             return ResponseEntity.badRequest().body(ex.getMessage());
@@ -169,14 +205,14 @@ public class ServingController {
             : mapper.readValue(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA"), DataSchema.class);
     }
 
-    private ResponseEntity<String> processInputData(final List<Object> inputData, final DataSchema schema,
+    private ResponseEntity<String> processInputData(final List<List<Object>> inputDatas, final DataSchema schema,
         final String acceptVal) throws JsonProcessingException {
-        final DefaultLeapFrame leapFrame = dataConversionHelper.convertInputToLeapFrame(schema, inputData);
+        final DefaultLeapFrame leapFrame = dataConversionHelper.convertInputToLeapFrame(schema, inputDatas);
         // Making call to the MLeap executor to get the output
         final DefaultLeapFrame totalLeapFrame = ScalaUtils.transformLeapFrame(mleapTransformer, leapFrame);
         final DefaultLeapFrame predictionsLeapFrame = ScalaUtils
             .selectFromLeapFrame(totalLeapFrame, schema.getOutput().getName());
-        final ArrayRow outputArrayRow = ScalaUtils.getOutputArrayRow(predictionsLeapFrame);
+        final List<Row> outputArrayRow = ScalaUtils.getOutputArrayRow(predictionsLeapFrame);
         return transformToHttpResponse(schema, outputArrayRow, acceptVal);
 
     }
@@ -186,17 +222,18 @@ public class ServingController {
         return (StringUtils.isBlank(acceptFromRequest) || StringUtils.equals(acceptFromRequest, MediaType.ALL_VALUE));
     }
 
-    private ResponseEntity<String> transformToHttpResponse(final DataSchema schema, final ArrayRow predictionRow,
+    private ResponseEntity<String> transformToHttpResponse(final DataSchema schema, final List<Row> predictionsRow,
         final String accept) throws JsonProcessingException {
 
         if (StringUtils.equals(schema.getOutput().getStruct(), DataStructureType.BASIC)) {
             final Object output = dataConversionHelper
-                .convertMLeapBasicTypeToJavaType(predictionRow, schema.getOutput().getType());
+                .convertMLeapBasicTypeToJavaType(predictionsRow.get(0), schema.getOutput().getType());
             return responseHelper.sendResponseForSingleValue(output.toString(), accept);
         } else {
             // If not basic type, it can be vector or array type from Spark
             return responseHelper.sendResponseForList(
-                ScalaUtils.getJavaObjectIteratorFromArrayRow(predictionRow, schema.getOutput().getStruct()), accept);
+                    predictionsRow.stream().map(predictionRow -> ScalaUtils.getJavaObjectIteratorFromArrayRow(predictionRow, schema.getOutput().getStruct())).collect(Collectors.toList())
+                , accept);
         }
     }
 

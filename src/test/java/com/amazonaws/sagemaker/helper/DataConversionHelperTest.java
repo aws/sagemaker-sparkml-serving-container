@@ -23,6 +23,8 @@ import com.amazonaws.sagemaker.type.DataStructureType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import ml.combust.mleap.core.types.ListType;
 import ml.combust.mleap.core.types.ScalarType;
@@ -47,7 +49,9 @@ public class DataConversionHelperTest {
         String inputJson = IOUtils
             .toString(this.getClass().getResourceAsStream("../dto/basic_input_schema.json"), "UTF-8");
         DataSchema schema = mapper.readValue(inputJson, DataSchema.class);
-        List<Object> expectedOutput = Lists.newArrayList(new Integer("2"), "C", new Double("34.5"));
+        List<Object> expectedElement = Lists.newArrayList(new Integer("2"), "C", new Double("34.5"));
+        List<List<Object>> expectedOutput = Lists.newArrayList();
+        expectedOutput.add(expectedElement);
         Assert.assertEquals(dataConversionHelper.convertCsvToObjectList(csvInput, schema), expectedOutput);
     }
 
@@ -57,7 +61,9 @@ public class DataConversionHelperTest {
         String inputJson = IOUtils
             .toString(this.getClass().getResourceAsStream("../dto/basic_input_schema.json"), "UTF-8");
         DataSchema schema = mapper.readValue(inputJson, DataSchema.class);
-        List<Object> expectedOutput = Lists.newArrayList(new Integer("2"), "C", new Double("34.5"));
+        List<Object> expectedElement = Lists.newArrayList(new Integer("2"), "C", new Double("34.5"));
+        List<List<Object>> expectedOutput = Lists.newArrayList();
+        expectedOutput.add(expectedElement);
         Assert.assertEquals(dataConversionHelper.convertCsvToObjectList(csvInput, schema), expectedOutput);
     }
 
@@ -66,7 +72,7 @@ public class DataConversionHelperTest {
         String inputJson = IOUtils
             .toString(this.getClass().getResourceAsStream("../dto/complete_input.json"), "UTF-8");
         SageMakerRequestObject sro = mapper.readValue(inputJson, SageMakerRequestObject.class);
-        DefaultLeapFrame leapframeTest = dataConversionHelper.convertInputToLeapFrame(sro.getSchema(), sro.getData());
+        DefaultLeapFrame leapframeTest = dataConversionHelper.convertInputToLeapFrame(sro.getSchema(), Collections.singletonList(sro.getData()));
         Assert.assertNotNull(leapframeTest.schema());
         Assert.assertNotNull(leapframeTest.dataset());
     }

@@ -28,10 +28,12 @@ import com.amazonaws.sagemaker.utils.SystemUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
+import ml.combust.mleap.runtime.frame.Row;
 import ml.combust.mleap.runtime.frame.Transformer;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilder;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilderSupport;
@@ -56,7 +58,7 @@ class ServingControllerTest {
     private Transformer mleapTransformerMock;
     private SageMakerRequestObject sro;
     private DefaultLeapFrame responseLeapFrame;
-    private ArrayRow outputArrayRow;
+    private Row outputArrayRow;
     private List<ColumnSchema> inputColumns;
     private ColumnSchema outputColumn;
     private List<Object> inputData;
@@ -81,7 +83,7 @@ class ServingControllerTest {
 
     private void buildResponseLeapFrame() {
         responseLeapFrame = new DataConversionHelper(new LeapFrameBuilderSupport(), new LeapFrameBuilder())
-            .convertInputToLeapFrame(sro.getSchema(), sro.getData());
+            .convertInputToLeapFrame(sro.getSchema(), Collections.singletonList(sro.getData()));
         outputArrayRow = new ArrayRow(Lists.newArrayList(new Integer("1")));
     }
 
@@ -99,7 +101,7 @@ class ServingControllerTest {
             .thenReturn(responseLeapFrame);
         PowerMockito.when(ScalaUtils.selectFromLeapFrame(Mockito.any(DefaultLeapFrame.class), Mockito.anyString()))
             .thenReturn(responseLeapFrame);
-        PowerMockito.when(ScalaUtils.getOutputArrayRow(Mockito.any(DefaultLeapFrame.class))).thenReturn(outputArrayRow);
+        PowerMockito.when(ScalaUtils.getOutputArrayRow(Mockito.any(DefaultLeapFrame.class))).thenReturn(Collections.singletonList(outputArrayRow));
     }
 
     @Test
@@ -164,7 +166,7 @@ class ServingControllerTest {
             .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
             .thenReturn(outputResponse.iterator());
         final ResponseEntity<String> output = controller.transformRequestJson(sro, "application/jsonlines");
-        Assert.assertEquals(output.getBody(), "{\"features\":[1,2]}");
+        Assert.assertEquals(output.getBody(), "[{\"features\":[1,2]}]");
     }
 
     @Test
@@ -208,6 +210,19 @@ class ServingControllerTest {
             .thenReturn(outputResponse.iterator());
         final ResponseEntity<String> output = controller.transformRequestCsv("1,2.0".getBytes(), "text/csv");
         Assert.assertEquals(output.getBody(), "1,2");
+    }
+
+    @Test
+    public void testJsonLinesApiWithListInput() {
+        schemaInJson = "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
+                + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
+        List<Object> outputResponse = Lists.newArrayList(1, 2, 0.345);
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponse.iterator());
+        final ResponseEntity<String> output = controller.transformRequestJsonLines("{\"data\":[1,2.0,\"TEST\"]}".getBytes(), "text/csv");
+        Assert.assertEquals(output.getBody(), "1,2,0.345");
     }
 
     @Test
