@@ -166,7 +166,7 @@ class ServingControllerTest {
             .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
             .thenReturn(outputResponse.iterator());
         final ResponseEntity<String> output = controller.transformRequestJson(sro, "application/jsonlines");
-        Assert.assertEquals(output.getBody(), "{\"features\":[1,2]}");
+        Assert.assertEquals(output.getBody(), "[{\"features\":[1,2]}]");
     }
 
     @Test
@@ -221,7 +221,7 @@ class ServingControllerTest {
         PowerMockito
                 .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
                 .thenReturn(outputResponse.iterator());
-        final ResponseEntity<String> output = controller.transformRequestJsonLines("[1,2.0,\"TEST\"]".getBytes(), "text/csv");
+        final ResponseEntity<String> output = controller.transformRequestJsonLines("{\"data\":[1,2.0,\"TEST\"]}".getBytes(), "text/csv");
         Assert.assertEquals(output.getBody(), "1,2,0.345");
     }
 
