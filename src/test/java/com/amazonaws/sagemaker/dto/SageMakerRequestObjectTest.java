@@ -18,10 +18,11 @@ package com.amazonaws.sagemaker.dto;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
 
 public class SageMakerRequestObjectTest {
 
@@ -80,14 +81,14 @@ public class SageMakerRequestObjectTest {
         Assert.assertEquals(sro.getSchema().getInput().get(0).getName(), "name_1");
         Assert.assertEquals(sro.getSchema().getInput().get(1).getName(), "name_2");
         Assert.assertEquals(sro.getSchema().getInput().get(2).getName(), "name_3");
-        Assert.assertEquals(sro.getSchema().getInput().get(0).getType(), "int");
+        Assert.assertEquals(sro.getSchema().getInput().get(0).getType(), "double");
         Assert.assertEquals(sro.getSchema().getInput().get(1).getType(), "string");
         Assert.assertEquals(sro.getSchema().getInput().get(2).getType(), "double");
         Assert.assertEquals(sro.getSchema().getInput().get(0).getStruct(), "vector");
         Assert.assertEquals(sro.getSchema().getInput().get(1).getStruct(), "basic");
         Assert.assertEquals(sro.getSchema().getInput().get(2).getStruct(), "array");
         Assert.assertEquals(sro.getData(),
-            Lists.newArrayList(Lists.newArrayList(1, 2, 3), "C", Lists.newArrayList(38.0, 24.0)));
+            Lists.newArrayList(Lists.newArrayList(1.0, 2.0, 3.0), "C", Lists.newArrayList(38.0, 24.0)));
         Assert.assertEquals(sro.getSchema().getOutput().getName(), "features");
         Assert.assertEquals(sro.getSchema().getOutput().getType(), "double");
         Assert.assertEquals(sro.getSchema().getOutput().getStruct(), "vector");

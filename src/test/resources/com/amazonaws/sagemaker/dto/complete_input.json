@@ -3,7 +3,7 @@
     "input": [
       {
         "name": "name_1",
-        "type": "int",
+        "type": "double",
         "struct": "vector"
       },
       {
@@ -23,5 +23,5 @@
       "struct": "vector"
     }
   },
-  "data": [[1, 2, 3], "C", [38.0, 24.0]]
+  "data": [[1.0, 2.0, 3.0], "C", [38.0, 24.0]]
 }

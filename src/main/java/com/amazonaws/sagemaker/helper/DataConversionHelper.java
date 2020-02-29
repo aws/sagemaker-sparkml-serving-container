@@ -16,24 +16,14 @@
 
 package com.amazonaws.sagemaker.helper;
 
-import com.amazonaws.sagemaker.dto.DataSchema;
 import com.amazonaws.sagemaker.dto.ColumnSchema;
+import com.amazonaws.sagemaker.dto.DataSchema;
 import com.amazonaws.sagemaker.type.BasicDataType;
 import com.amazonaws.sagemaker.type.DataStructureType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
-import java.util.stream.Collectors;
-import ml.combust.mleap.core.types.BasicType;
-import ml.combust.mleap.core.types.DataType;
-import ml.combust.mleap.core.types.ListType;
-import ml.combust.mleap.core.types.ScalarType;
-import ml.combust.mleap.core.types.StructField;
-import ml.combust.mleap.core.types.StructType;
-import ml.combust.mleap.core.types.TensorType;
+import ml.combust.mleap.core.types.*;
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
 import ml.combust.mleap.runtime.frame.Row;
@@ -43,8 +33,14 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.spark.ml.linalg.Vectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Converter class to convert data between input to MLeap expected types and convert back MLeap helper to Java types
@@ -168,12 +164,12 @@ public class DataConversionHelper {
                 default:
                     throw new IllegalArgumentException("Given type is not supported");
             }
-        } else {
+        } else if (!StringUtils.isBlank(structure) && StringUtils.equals(structure, DataStructureType.ARRAY)) {
             List<Object> listOfObjects;
             try {
                 listOfObjects = (List<Object>) value;
             } catch (ClassCastException cce) {
-                throw new IllegalArgumentException("Input val is not a list but struct passed is vector or array");
+                throw new IllegalArgumentException("Input val is not a list but struct passed is array");
             }
             switch (type) {
                 case BasicDataType.INTEGER:
@@ -194,7 +190,17 @@ public class DataConversionHelper {
                 default:
                     throw new IllegalArgumentException("Given type is not supported");
             }
-
+        } else {
+            if(!type.equals(BasicDataType.DOUBLE))
+                throw new IllegalArgumentException("Only Double type is supported for vector");
+            List<Double> vectorValues;
+            try {
+                vectorValues = (List<Double>)value;
+            } catch (ClassCastException cce) {
+                throw new IllegalArgumentException("Input val is not a list but struct passed is vector");
+            }
+            double[] primitiveVectorValues = vectorValues.stream().mapToDouble(d -> d).toArray();
+            return Vectors.dense(primitiveVectorValues);
         }
     }
 
