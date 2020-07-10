@@ -21,6 +21,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 import com.amazonaws.sagemaker.dto.BatchExecutionParameter;
 import com.amazonaws.sagemaker.dto.DataSchema;
+import com.amazonaws.sagemaker.dto.SageMakerDataListObject;
 import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.helper.DataConversionHelper;
 import com.amazonaws.sagemaker.helper.ResponseHelper;
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -142,6 +144,54 @@ public class ServingController {
             return this
                 .processInputData(dataConversionHelper.convertCsvToObjectList(new String(csvRow), schema), schema,
                     acceptVal);
+        } catch (final Exception ex) {
+            LOG.error("Error in processing current request", ex);
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+    /**
+     * Implements the invocations POST API for application/jsonlines input
+     *
+     * @param jsonLines, lines of json values
+     * @param accept, accept parameter from request
+     * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
+     */
+    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
+    public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
+                                                            @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
+        if (jsonLines == null) {
+            LOG.error("Input passed to the request is empty");
+            return ResponseEntity.noContent().build();
+        }
+        try {
+            final String acceptVal = this.retrieveAndVerifyAccept(accept);
+            final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
+            final String jsonStringLine = new String(jsonLines);
+
+            // Map list of inputs to DataList object
+            final SageMakerDataListObject sro = mapper.readValue(jsonStringLine, SageMakerDataListObject.class);
+            List<List<Object>> inputDatas = sro.getData();
+            List<ResponseEntity<String>> responseList = Lists.newArrayList();
+
+            // Process each input separately and add response to a list
+            final int inputDatasSize = inputDatas.size();
+            for (int idx = 0; idx < inputDatasSize; ++idx) {
+                ResponseEntity<String> response = this.processInputData(inputDatas.get(idx), schema, acceptVal);
+                responseList.add(response);
+            }
+
+            // Merge response body to a new output response
+            List<List<String>> bodyList = Lists.newArrayList();
+            HttpHeaders headers = null;
+            //combine body in responseList
+            for (ResponseEntity<String> response:responseList) {
+                HttpStatus statuscode = response.getStatusCode();
+                headers = response.getHeaders();
+                bodyList.add(Lists.newArrayList(response.getBody()));
+            }
+
+            return ResponseEntity.ok().headers(headers).body(bodyList.toString());
         } catch (final Exception ex) {
             LOG.error("Error in processing current request", ex);
             return ResponseEntity.badRequest().body(ex.getMessage());

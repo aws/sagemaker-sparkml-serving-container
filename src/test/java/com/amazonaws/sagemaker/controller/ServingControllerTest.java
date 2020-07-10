@@ -230,6 +230,42 @@ class ServingControllerTest {
         Assert.assertEquals(output.getBody(), "input data is not valid");
     }
 
+    @Test
+    public void testJsonLinesApiWithListInput() {
+        schemaInJson = "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
+                + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
+        List<Object> outputResponseForFirstInput = Lists.newArrayList(1, 2);
+        List<Object> outputResponseForSecondInput = Lists.newArrayList(3, 4);
+        final String expectOutput = "[[1,2], [3,4]]";
+
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponseForFirstInput.iterator())
+                .thenReturn(outputResponseForSecondInput.iterator());
+        final ResponseEntity<String> output = controller.transformRequestJsonLines("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(), "text/csv");
+        Assert.assertEquals(expectOutput, output.getBody());
+    }
+
+    @Test
+    public void testJsonLinesApiWithListInputThorwsException() {
+        schemaInJson = "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
+                + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenThrow(new RuntimeException("input data is not valid"));
+        final ResponseEntity<String> output = controller.transformRequestJsonLines("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(), "text/csv");
+        Assert.assertEquals(output.getStatusCode(), HttpStatus.BAD_REQUEST);
+        Assert.assertEquals(output.getBody(), "input data is not valid");
+    }
+
+    @Test
+    public void testJsonLinesApiWithNullInput() {
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        final ResponseEntity<String> output = controller.transformRequestJsonLines(null, "text/csv");
+        Assert.assertEquals(output.getStatusCode(), HttpStatus.NO_CONTENT);
+    }
 
     @Test
     public void testParseAcceptEmptyFromRequestEnvironmentPresent() {
