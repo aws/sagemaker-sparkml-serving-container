@@ -21,7 +21,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 import com.amazonaws.sagemaker.dto.BatchExecutionParameter;
 import com.amazonaws.sagemaker.dto.DataSchema;
-import com.amazonaws.sagemaker.dto.SageMakerDataListObject;
+import com.amazonaws.sagemaker.dto.SageMakerRequestListObject;
 import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.helper.DataConversionHelper;
 import com.amazonaws.sagemaker.helper.ResponseHelper;
@@ -30,11 +30,13 @@ import com.amazonaws.sagemaker.type.DataStructureType;
 import com.amazonaws.sagemaker.utils.ScalaUtils;
 import com.amazonaws.sagemaker.utils.SystemUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
@@ -44,7 +46,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -104,7 +105,7 @@ public class ServingController {
      * Implements the invocations POST API for application/json input
      *
      * @param sro, the request object
-     * @param accept, accept parameter from request
+     * @param accept, indicates the content types that the http method is able to understand
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -125,10 +126,10 @@ public class ServingController {
     }
 
     /**
-     * Implements the invocations POST API for application/json input
+     * Implements the invocations POST API for text/csv input
      *
      * @param csvRow, data in row format in CSV
-     * @param accept, accept parameter from request
+     * @param accept, indicates the content types that the http method is able to understand
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.TEXT_CSV_VALUE)
@@ -154,45 +155,31 @@ public class ServingController {
      * Implements the invocations POST API for application/jsonlines input
      *
      * @param jsonLines, lines of json values
-     * @param accept, accept parameter from request
+     * @param accept, indicates the content types that the http method is able to understand
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
-    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE_MULTIPLE)
-    public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
-                                                            @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
+    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
+    public ResponseEntity<String> transformRequestJsonLines(
+            @RequestBody final byte[] jsonLines,
+            @RequestHeader(value = HttpHeaders.ACCEPT, required = false)
+            final String accept) {
+
         if (jsonLines == null) {
+            LOG.error("Input passed to the request is null");
+            return ResponseEntity.badRequest().build();
+
+        } else if (jsonLines.length == 0) {
+
             LOG.error("Input passed to the request is empty");
             return ResponseEntity.noContent().build();
         }
+
         try {
             final String acceptVal = this.retrieveAndVerifyAccept(accept);
-            final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
-            final String jsonStringLine = new String(jsonLines);
+            return this.processInputDataForJsonLines(new String(jsonLines), acceptVal);
 
-            // Map list of inputs to DataList object
-            final SageMakerDataListObject sro = mapper.readValue(jsonStringLine, SageMakerDataListObject.class);
-            List<List<Object>> inputDatas = sro.getData();
-            List<ResponseEntity<String>> responseList = Lists.newArrayList();
-
-            // Process each input separately and add response to a list
-            final int inputDatasSize = inputDatas.size();
-            for (int idx = 0; idx < inputDatasSize; ++idx) {
-                ResponseEntity<String> response = this.processInputData(inputDatas.get(idx), schema, acceptVal);
-                responseList.add(response);
-            }
-
-            // Merge response body to a new output response
-            List<List<String>> bodyList = Lists.newArrayList();
-            HttpHeaders headers = null;
-            //combine body in responseList
-            for (ResponseEntity<String> response:responseList) {
-                HttpStatus statuscode = response.getStatusCode();
-                headers = response.getHeaders();
-                bodyList.add(Lists.newArrayList(response.getBody()));
-            }
-
-            return ResponseEntity.ok().headers(headers).body(bodyList.toString());
         } catch (final Exception ex) {
+
             LOG.error("Error in processing current request", ex);
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
@@ -229,6 +216,72 @@ public class ServingController {
         final ArrayRow outputArrayRow = ScalaUtils.getOutputArrayRow(predictionsLeapFrame);
         return transformToHttpResponse(schema, outputArrayRow, acceptVal);
 
+    }
+
+    /**
+     * Helper method to interpret the JSONLines input and return the response in the expected output format.
+     *
+     * @param jsonLinesAsString
+     *      The JSON lines input.
+     *
+     * @param acceptVal
+     *      The output format in which the response is to be returned.
+     *
+     * @return
+     *      The transformed output for the JSONlines input.
+     *
+     * @throws IOException
+     *      If there is an exception during object mapping and validation.
+     *
+     */
+    ResponseEntity<String> processInputDataForJsonLines(
+            final String jsonLinesAsString, final String acceptVal) throws IOException {
+
+        final String lines[] = jsonLinesAsString.split("\\r?\\n");
+        final ObjectMapper mapper = new ObjectMapper();
+
+        // first line is special since it could contain the schema as well. Extract the schema.
+        final SageMakerRequestObject firstLine = mapper.readValue(lines[0], SageMakerRequestObject.class);
+        final DataSchema schema = this.retrieveAndVerifySchema(firstLine.getSchema(), mapper);
+
+        List<List<Object>> inputDatas = Lists.newArrayList();
+
+        for(String jsonStringLine : lines) {
+            try {
+
+                final SageMakerRequestListObject sro = mapper.readValue(jsonStringLine, SageMakerRequestListObject.class);
+
+                for(int idx = 0; idx < sro.getData().size(); ++idx) {
+                    inputDatas.add(sro.getData().get(idx));
+                }
+
+            } catch (final JsonMappingException ex) {
+
+                final SageMakerRequestObject sro = mapper.readValue(jsonStringLine, SageMakerRequestObject.class);
+                inputDatas.add(sro.getData());
+            }
+        }
+
+        List<ResponseEntity<String>> responseList = Lists.newArrayList();
+
+        // Process each input separately and add response to a list
+        for (int idx = 0; idx < inputDatas.size(); ++idx) {
+            responseList.add(this.processInputData(inputDatas.get(idx), schema, acceptVal));
+        }
+
+        // Merge response body to a new output response
+        List<List<String>> bodyList = Lists.newArrayList();
+
+        // All response should be valid if no exception got catch
+        // which all headers should be the same and extract the first one to construct responseEntity
+        HttpHeaders headers = responseList.get(0).getHeaders();
+
+        //combine body in responseList
+        for (ResponseEntity<String> response: responseList) {
+            bodyList.add(Lists.newArrayList(response.getBody()));
+        }
+
+        return ResponseEntity.ok().headers(headers).body(bodyList.toString());
     }
 
     private boolean checkEmptyAccept(final String acceptFromRequest) {
