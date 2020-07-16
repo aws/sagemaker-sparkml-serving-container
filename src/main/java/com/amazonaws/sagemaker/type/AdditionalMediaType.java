@@ -23,6 +23,7 @@ public final class AdditionalMediaType {
 
     public static final String TEXT_CSV_VALUE = "text/csv";
     public static final String APPLICATION_JSONLINES_VALUE = "application/jsonlines";
+    public static final String APPLICATION_JSONLINES_VALUE_MULTIPLE ="application/jsonlines;data=multiline";
     public static final String APPLICATION_JSONLINES_TEXT_VALUE = "application/jsonlines;data=text";
 
 }

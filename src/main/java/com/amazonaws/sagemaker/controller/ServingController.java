@@ -157,7 +157,7 @@ public class ServingController {
      * @param accept, accept parameter from request
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
-    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
+    @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE_MULTIPLE)
     public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
                                                             @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
         if (jsonLines == null) {

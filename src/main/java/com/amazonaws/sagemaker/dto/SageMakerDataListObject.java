@@ -23,8 +23,8 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 
 /**
- * Request object POJO to which input request in JSONLINES format will be mapped to by Spring (using Jackson). For sample
- * input, please see test/resources/com/amazonaws/sagemaker/dto
+ * Request object POJO to which data field of input request in JSONLINES format will be mapped to by Spring (using Jackson).
+ * For sample input, please see test/resources/com/amazonaws/sagemaker/dto
  */
 public class SageMakerDataListObject {
 
