@@ -21,7 +21,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 import com.amazonaws.sagemaker.dto.BatchExecutionParameter;
 import com.amazonaws.sagemaker.dto.DataSchema;
-import com.amazonaws.sagemaker.dto.SageMakerDataListObject;
+import com.amazonaws.sagemaker.dto.SageMakerRequestListObject;
 import com.amazonaws.sagemaker.dto.SageMakerRequestObject;
 import com.amazonaws.sagemaker.helper.DataConversionHelper;
 import com.amazonaws.sagemaker.helper.ResponseHelper;
@@ -44,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -125,7 +124,7 @@ public class ServingController {
     }
 
     /**
-     * Implements the invocations POST API for application/json input
+     * Implements the invocations POST API for text/csv input
      *
      * @param csvRow, data in row format in CSV
      * @param accept, accept parameter from request
@@ -166,11 +165,11 @@ public class ServingController {
         }
         try {
             final String acceptVal = this.retrieveAndVerifyAccept(accept);
-            final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
             final String jsonStringLine = new String(jsonLines);
 
             // Map list of inputs to DataList object
-            final SageMakerDataListObject sro = mapper.readValue(jsonStringLine, SageMakerDataListObject.class);
+            final SageMakerRequestListObject sro = mapper.readValue(jsonStringLine, SageMakerRequestListObject.class);
+            final DataSchema schema = this.retrieveAndVerifySchema(sro.getSchema(), mapper);
             List<List<Object>> inputDatas = sro.getData();
             List<ResponseEntity<String>> responseList = Lists.newArrayList();
 
@@ -183,11 +182,13 @@ public class ServingController {
 
             // Merge response body to a new output response
             List<List<String>> bodyList = Lists.newArrayList();
-            HttpHeaders headers = null;
+
+            // All response should be valid if no exception got catch
+            // which all headers should be the same and extract the first one to construct responseEntity
+            HttpHeaders headers = responseList.get(0).getHeaders();
+
             //combine body in responseList
             for (ResponseEntity<String> response:responseList) {
-                HttpStatus statuscode = response.getStatusCode();
-                headers = response.getHeaders();
                 bodyList.add(Lists.newArrayList(response.getBody()));
             }
 

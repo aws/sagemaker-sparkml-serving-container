@@ -248,7 +248,7 @@ class ServingControllerTest {
     }
 
     @Test
-    public void testJsonLinesApiWithListInputThorwsException() {
+    public void testJsonLinesApiWithListInputThrowsException() {
         schemaInJson = "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
                 + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
         PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);

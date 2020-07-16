@@ -26,14 +26,21 @@ import java.util.List;
  * Request object POJO to which input request in JSONLINES format will be mapped to by Spring (using Jackson). For sample
  * input, please see test/resources/com/amazonaws/sagemaker/dto
  */
-public class SageMakerDataListObject {
+public class SageMakerRequestListObject {
 
+    private DataSchema schema;
     private List<List<Object>> data;
 
     @JsonCreator
-    public SageMakerDataListObject(
-            @JsonProperty("data") final List<List<Object>> data) {
+    public SageMakerRequestListObject(@JsonProperty("schema") final DataSchema schema,
+                                      @JsonProperty("data") final List<List<Object>> data) {
+        // schema can be retrieved from environment variable as well, hence it is not enforced to be null
+        this.schema = schema;
         this.data = Preconditions.checkNotNull(data);
+    }
+
+    public DataSchema getSchema() {
+        return schema;
     }
 
     public List<List<Object>> getData() {
