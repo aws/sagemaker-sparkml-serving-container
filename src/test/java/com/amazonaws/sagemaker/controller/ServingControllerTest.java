@@ -264,6 +264,15 @@ class ServingControllerTest {
     public void testJsonLinesApiWithNullInput() {
         PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
         final ResponseEntity<String> output = controller.transformRequestJsonLines(null, "text/csv");
+        System.out.println("outputForNullInput" + output);
+        Assert.assertEquals(output.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void testJsonLinesApiWithEmptyInput() {
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        final ResponseEntity<String> output = controller.transformRequestJsonLines(new byte[0], "text/csv");
+        System.out.println("outputForEmptyInput" + output);
         Assert.assertEquals(output.getStatusCode(), HttpStatus.NO_CONTENT);
     }
 

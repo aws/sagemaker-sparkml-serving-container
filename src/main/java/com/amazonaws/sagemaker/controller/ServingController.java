@@ -35,6 +35,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
@@ -103,7 +104,7 @@ public class ServingController {
      * Implements the invocations POST API for application/json input
      *
      * @param sro, the request object
-     * @param accept, accept parameter from request
+     * @param accept, indicates the content types that the http method is able to understand
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -127,7 +128,7 @@ public class ServingController {
      * Implements the invocations POST API for text/csv input
      *
      * @param csvRow, data in row format in CSV
-     * @param accept, accept parameter from request
+     * @param accept, indicates the content types that the http method is able to understand
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.TEXT_CSV_VALUE)
@@ -153,46 +154,21 @@ public class ServingController {
      * Implements the invocations POST API for application/jsonlines input
      *
      * @param jsonLines, lines of json values
-     * @param accept, accept parameter from request
+     * @param accept, indicates the content types that the http method is able to understand
      * @return ResponseEntity with body as the expected payload JSON & proper statuscode based on the input
      */
     @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
     public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
                                                             @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
-        if (jsonLines == null) {
+        final byte[] emptyInput = new byte[0];
+        if (Arrays.equals(emptyInput, jsonLines)) {
             LOG.error("Input passed to the request is empty");
             return ResponseEntity.noContent().build();
         }
         try {
+            final String jsonLinesAsString = new String(jsonLines);
             final String acceptVal = this.retrieveAndVerifyAccept(accept);
-            final String jsonStringLine = new String(jsonLines);
-
-            // Map list of inputs to DataList object
-            final SageMakerRequestListObject sro = mapper.readValue(jsonStringLine, SageMakerRequestListObject.class);
-            final DataSchema schema = this.retrieveAndVerifySchema(sro.getSchema(), mapper);
-            List<List<Object>> inputDatas = sro.getData();
-            List<ResponseEntity<String>> responseList = Lists.newArrayList();
-
-            // Process each input separately and add response to a list
-            final int inputDatasSize = inputDatas.size();
-            for (int idx = 0; idx < inputDatasSize; ++idx) {
-                ResponseEntity<String> response = this.processInputData(inputDatas.get(idx), schema, acceptVal);
-                responseList.add(response);
-            }
-
-            // Merge response body to a new output response
-            List<List<String>> bodyList = Lists.newArrayList();
-
-            // All response should be valid if no exception got catch
-            // which all headers should be the same and extract the first one to construct responseEntity
-            HttpHeaders headers = responseList.get(0).getHeaders();
-
-            //combine body in responseList
-            for (ResponseEntity<String> response:responseList) {
-                bodyList.add(Lists.newArrayList(response.getBody()));
-            }
-
-            return ResponseEntity.ok().headers(headers).body(bodyList.toString());
+            return this.processInputDataForMultipleJsonInput(jsonLinesAsString, acceptVal);
         } catch (final Exception ex) {
             LOG.error("Error in processing current request", ex);
             return ResponseEntity.badRequest().body(ex.getMessage());
@@ -230,6 +206,34 @@ public class ServingController {
         final ArrayRow outputArrayRow = ScalaUtils.getOutputArrayRow(predictionsLeapFrame);
         return transformToHttpResponse(schema, outputArrayRow, acceptVal);
 
+    }
+
+    private ResponseEntity<String> processInputDataForMultipleJsonInput(final String jsonLinesAsString,
+                                                                        final String acceptVal) throws IOException {
+        // Map list of inputs to DataList object
+        final SageMakerRequestListObject sro = mapper.readValue(jsonLinesAsString, SageMakerRequestListObject.class);
+        final DataSchema schema = this.retrieveAndVerifySchema(sro.getSchema(), mapper);
+        List<List<Object>> inputDatas = sro.getData();
+        List<ResponseEntity<String>> responseList = Lists.newArrayList();
+
+        // Process each input separately and add response to a list
+        for (int idx = 0; idx < inputDatas.size(); ++idx) {
+            responseList.add(this.processInputData(inputDatas.get(idx), schema, acceptVal));
+        }
+
+        // Merge response body to a new output response
+        List<List<String>> bodyList = Lists.newArrayList();
+
+        // All response should be valid if no exception got catch
+        // which all headers should be the same and extract the first one to construct responseEntity
+        HttpHeaders headers = responseList.get(0).getHeaders();
+
+        //combine body in responseList
+        for (ResponseEntity<String> response: responseList) {
+            bodyList.add(Lists.newArrayList(response.getBody()));
+        }
+
+        return ResponseEntity.ok().headers(headers).body(bodyList.toString());
     }
 
     private boolean checkEmptyAccept(final String acceptFromRequest) {
