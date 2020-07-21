@@ -47,7 +47,7 @@ public class SageMakerRequestListObjectTest {
     }
 
     @Test
-    public void testSageMakerRequestObjectCreation() throws IOException {
+    public void testSageMakerRequestListObjectCreation() throws IOException {
         String inputJson = IOUtils.toString(this.getClass().getResourceAsStream("basic_input_schema.json"), "UTF-8");
         DataSchema schema = mapper.readValue(inputJson, DataSchema.class);
         SageMakerRequestListObject sro = new SageMakerRequestListObject(schema, listOfListInputForBasicInput);
@@ -72,7 +72,7 @@ public class SageMakerRequestListObjectTest {
     }
 
     @Test
-    public void testParseBasicInputJson() throws IOException {
+    public void testParseBasicMultipleLinesInputJson() throws IOException {
         String inputJson = IOUtils.toString(this.getClass().getResourceAsStream("basic_multipleLines_input.json"), "UTF-8");
         SageMakerRequestListObject sro = mapper.readValue(inputJson, SageMakerRequestListObject.class);
         Assert.assertEquals(sro.getSchema().getInput().size(), 3);
@@ -91,7 +91,7 @@ public class SageMakerRequestListObjectTest {
     }
 
     @Test
-    public void testParseCompleteInputJson() throws IOException {
+    public void testParseCompleteMultipleLinesInputJson() throws IOException {
         String inputJson = IOUtils.toString(this.getClass().getResourceAsStream("complete_multipleLines_input.json"), "UTF-8");
         SageMakerRequestListObject sro = mapper.readValue(inputJson, SageMakerRequestListObject.class);
         Assert.assertEquals(sro.getSchema().getInput().size(), 3);

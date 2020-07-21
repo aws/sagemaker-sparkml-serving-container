@@ -160,15 +160,17 @@ public class ServingController {
     @RequestMapping(path = "/invocations", method = POST, consumes = AdditionalMediaType.APPLICATION_JSONLINES_VALUE)
     public ResponseEntity<String> transformRequestJsonLines(@RequestBody final byte[] jsonLines,
                                                             @RequestHeader(value = HttpHeaders.ACCEPT, required = false) final String accept) {
-        final byte[] emptyInput = new byte[0];
-        if (Arrays.equals(emptyInput, jsonLines)) {
+        if (jsonLines == null) {
+            LOG.error("Input passed to the request is null");
+            return ResponseEntity.badRequest().build();
+        } else if (jsonLines.length == 0) {
             LOG.error("Input passed to the request is empty");
             return ResponseEntity.noContent().build();
         }
+
         try {
-            final String jsonLinesAsString = new String(jsonLines);
             final String acceptVal = this.retrieveAndVerifyAccept(accept);
-            return this.processInputDataForMultipleJsonInput(jsonLinesAsString, acceptVal);
+            return this.processInputDataForMultipleJsonInput(new String(jsonLines), acceptVal);
         } catch (final Exception ex) {
             LOG.error("Error in processing current request", ex);
             return ResponseEntity.badRequest().body(ex.getMessage());
