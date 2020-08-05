@@ -236,15 +236,22 @@ class ServingControllerTest {
                 + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
         List<Object> outputResponseForFirstInput = Lists.newArrayList(1, 2);
         List<Object> outputResponseForSecondInput = Lists.newArrayList(3, 4);
+        List<Object> outputResponseForThirdInput = Lists.newArrayList(5, 6);
+        List<Object> outputResponseForFourthInput = Lists.newArrayList(7, 8);
         final String expectOutput = "[[1,2], [3,4]]";
+        final String expectOutput1 = "[[5,6], [7,8]]";
 
         PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
         PowerMockito
                 .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
                 .thenReturn(outputResponseForFirstInput.iterator())
-                .thenReturn(outputResponseForSecondInput.iterator());
+                .thenReturn(outputResponseForSecondInput.iterator())
+                .thenReturn(outputResponseForThirdInput.iterator())
+                .thenReturn(outputResponseForFourthInput.iterator());
         final ResponseEntity<String> output = controller.transformRequestJsonLines("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(), "text/csv");
+        final ResponseEntity<String> output1 = controller.transformRequestJsonLines("{\"data\":[1,2.0,\"TEST1\"]}\n{\"data\":[2,3.0,\"TEST\"]}".getBytes(), "text/csv");
         Assert.assertEquals(expectOutput, output.getBody());
+        Assert.assertEquals(expectOutput1, output1.getBody());
     }
 
     @Test
