@@ -30,6 +30,7 @@ import com.amazonaws.sagemaker.type.DataStructureType;
 import com.amazonaws.sagemaker.utils.ScalaUtils;
 import com.amazonaws.sagemaker.utils.SystemUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -213,9 +214,22 @@ public class ServingController {
     private ResponseEntity<String> processInputDataForMultipleJsonInput(final String jsonLinesAsString,
                                                                         final String acceptVal) throws IOException {
         // Map list of inputs to DataList object
-        final SageMakerRequestListObject sro = mapper.readValue(jsonLinesAsString, SageMakerRequestListObject.class);
-        final DataSchema schema = this.retrieveAndVerifySchema(sro.getSchema(), mapper);
-        List<List<Object>> inputDatas = sro.getData();
+        final String jsonStringLines[] = jsonLinesAsString.split("\\r?\\n");
+        final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
+        List<List<Object>> inputDatas = Lists.newArrayList();
+        for(String jsonStringLine : jsonStringLines) {
+            final ObjectMapper mapper = new ObjectMapper();
+            try {
+                final SageMakerRequestListObject sro = mapper.readValue(jsonStringLine, SageMakerRequestListObject.class);
+                for(int idx = 0; idx < sro.getData().size(); ++idx) {
+                    inputDatas.add(sro.getData().get(idx));
+                }
+            } catch (final JsonMappingException ex) {
+                final SageMakerRequestObject sro = mapper.readValue(jsonStringLine, SageMakerRequestObject.class);
+                inputDatas.add(sro.getData());
+            }
+        }
+
         List<ResponseEntity<String>> responseList = Lists.newArrayList();
 
         // Process each input separately and add response to a list
