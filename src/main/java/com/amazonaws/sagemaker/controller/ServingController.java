@@ -215,7 +215,9 @@ public class ServingController {
                                                                         final String acceptVal) throws IOException {
         // Map list of inputs to DataList object
         final String jsonStringLines[] = jsonLinesAsString.split("\\r?\\n");
-        final DataSchema schema = this.retrieveAndVerifySchema(null, mapper);
+        final ObjectMapper mapper1 = new ObjectMapper();
+        final SageMakerRequestObject sro1 = mapper1.readValue(jsonStringLines[0], SageMakerRequestObject.class);
+        final DataSchema schema = this.retrieveAndVerifySchema(sro1.getSchema(), mapper1);
         List<List<Object>> inputDatas = Lists.newArrayList();
         for(String jsonStringLine : jsonStringLines) {
             final ObjectMapper mapper = new ObjectMapper();
