@@ -39,7 +39,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -49,7 +48,7 @@ import org.springframework.http.ResponseEntity;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ScalaUtils.class, SystemUtils.class})
-public class ServingControllerTest {
+class ServingControllerTest {
 
     private ServingController controller;
     private DataConversionHelper converter = new DataConversionHelper(new LeapFrameBuilderSupport(),
