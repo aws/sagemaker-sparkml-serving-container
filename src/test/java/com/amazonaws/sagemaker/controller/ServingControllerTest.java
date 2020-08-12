@@ -230,6 +230,261 @@ class ServingControllerTest {
         Assert.assertEquals(output.getBody(), "input data is not valid");
     }
 
+    @Test
+    public void testJsonLinesApiWithListInputCsvOutput() {
+        schemaInJson = "{"
+                + "\"input\":["
+                + "{\"name\":\"test_name_1\",\"type\":\"int\"},"
+                + "{\"name\":\"test_name_2\",\"type\":\"double\"},"
+                + "{\"name\":\"test_name_3\",\"type\":\"string\"}"
+                + "],"
+                + "\"output\":"
+                + "{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}"
+                + "}";
+
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA"))
+                .thenReturn(schemaInJson);
+
+        List<Object> outputResponseForFirstInput = Lists.newArrayList(1, 2);
+        List<Object> outputResponseForSecondInput = Lists.newArrayList(3, 4);
+        List<Object> outputResponseForThirdInput = Lists.newArrayList(5, 6);
+        List<Object> outputResponseForFourthInput = Lists.newArrayList(7, 8);
+        List<Object> outputResponseForFifthInput = Lists.newArrayList(9, 10);
+        List<Object> outputResponseForSixthInput = Lists.newArrayList(11, 12);
+        List<Object> outputResponseForSeventhInput = Lists.newArrayList(13, 14);
+        List<Object> outputResponseForEighthInput = Lists.newArrayList(15, 16);
+
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponseForFirstInput.iterator())
+                .thenReturn(outputResponseForSecondInput.iterator())
+                .thenReturn(outputResponseForThirdInput.iterator())
+                .thenReturn(outputResponseForFourthInput.iterator())
+                .thenReturn(outputResponseForFifthInput.iterator())
+                .thenReturn(outputResponseForSixthInput.iterator())
+                .thenReturn(outputResponseForSeventhInput.iterator())
+                .thenReturn(outputResponseForEighthInput.iterator());
+
+        final String expectOutput = "[[1,2], [3,4]]";
+
+        final ResponseEntity<String> output =
+                controller.transformRequestJsonLines(
+                        "{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(), "text/csv");
+
+        Assert.assertEquals(expectOutput, output.getBody());
+
+        final String expectOutput1 = "[[5,6], [7,8]]";
+
+        final ResponseEntity<String> output1 =
+                controller.transformRequestJsonLines(
+                        "{\"data\":[1,2.0,\"TEST1\"]}\n{\"data\":[2,3.0,\"TEST\"]}".getBytes(), "text/csv");
+
+        Assert.assertEquals(expectOutput1, output1.getBody());
+
+        final String expectOutput2 = "[[9,10], [11,12], [13,14], [15,16]]";
+
+        final ResponseEntity<String> output2 =
+                controller.transformRequestJsonLines(
+                        ("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}\n"
+                                + "{\"data\":[1,2.0,\"TEST1\"]}\n"
+                                + "{\"data\":[2,3.0,\"TEST\"]}"
+                        ).getBytes(),
+                        "text/csv");
+
+        Assert.assertEquals(expectOutput2, output2.getBody());
+    }
+
+    @Test
+    public void testJsonLinesApiWithListInputJsonOutput() {
+        schemaInJson = "{"
+                + "\"input\":["
+                + "{\"name\":\"test_name_1\",\"type\":\"int\"},"
+                + "{\"name\":\"test_name_2\",\"type\":\"double\"},"
+                + "{\"name\":\"test_name_3\",\"type\":\"string\"}"
+                + "],"
+                + "\"output\":"
+                + "{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}"
+                + "}";
+
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA"))
+                .thenReturn(schemaInJson);
+
+        List<Object> outputResponseForFirstInput = Lists.newArrayList(1, 2);
+        List<Object> outputResponseForSecondInput = Lists.newArrayList(3, 4);
+        List<Object> outputResponseForThirdInput = Lists.newArrayList(5, 6);
+        List<Object> outputResponseForFourthInput = Lists.newArrayList(7, 8);
+        List<Object> outputResponseForFifthInput = Lists.newArrayList(9, 10);
+        List<Object> outputResponseForSixthInput = Lists.newArrayList(11, 12);
+        List<Object> outputResponseForSeventhInput = Lists.newArrayList(13, 14);
+        List<Object> outputResponseForEighthInput = Lists.newArrayList(15, 16);
+
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponseForFirstInput.iterator())
+                .thenReturn(outputResponseForSecondInput.iterator())
+                .thenReturn(outputResponseForThirdInput.iterator())
+                .thenReturn(outputResponseForFourthInput.iterator())
+                .thenReturn(outputResponseForFifthInput.iterator())
+                .thenReturn(outputResponseForSixthInput.iterator())
+                .thenReturn(outputResponseForSeventhInput.iterator())
+                .thenReturn(outputResponseForEighthInput.iterator());
+
+        final String expectOutput = "[[{\"features\":[1,2]}], [{\"features\":[3,4]}]]";
+
+        final ResponseEntity<String> output =
+                controller.transformRequestJsonLines(
+                        "{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(),
+                        "application/jsonlines");
+
+        Assert.assertEquals(expectOutput, output.getBody());
+
+        final String expectOutput1 = "[[{\"features\":[5,6]}], [{\"features\":[7,8]}]]";
+
+        final ResponseEntity<String> output1 =
+                controller.transformRequestJsonLines(
+                        "{\"data\":[1,2.0,\"TEST1\"]}\n{\"data\":[2,3.0,\"TEST\"]}".getBytes(),
+                        "application/jsonlines");
+
+        Assert.assertEquals(expectOutput1, output1.getBody());
+
+        final String expectOutput2 =
+                "[[{\"features\":[9,10]}], [{\"features\":[11,12]}], "
+                        + "[{\"features\":[13,14]}], [{\"features\":[15,16]}]]";
+
+        final ResponseEntity<String> output2 =
+                controller.transformRequestJsonLines(
+                        ("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}\n"
+                                + "{\"data\":[1,2.0,\"TEST1\"]}\n"
+                                + "{\"data\":[2,3.0,\"TEST\"]}"
+                        ).getBytes(),
+                        "application/jsonlines");
+
+        Assert.assertEquals(expectOutput2, output2.getBody());
+    }
+
+    @Test
+    public void testJsonLinesApiWithListInputJsonTextOutput() {
+        schemaInJson = "{"
+                + "\"input\":["
+                + "{\"name\":\"test_name_1\",\"type\":\"int\"},"
+                + "{\"name\":\"test_name_2\",\"type\":\"double\"},"
+                + "{\"name\":\"test_name_3\",\"type\":\"string\"}"
+                + "],"
+                + "\"output\":"
+                + "{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}"
+                + "}";
+
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA"))
+                .thenReturn(schemaInJson);
+
+        List<Object> outputResponseForFirstInput = Lists.newArrayList(1, 2);
+        List<Object> outputResponseForSecondInput = Lists.newArrayList(3, 4);
+        List<Object> outputResponseForThirdInput = Lists.newArrayList(5, 6);
+        List<Object> outputResponseForFourthInput = Lists.newArrayList(7, 8);
+        List<Object> outputResponseForFifthInput = Lists.newArrayList(9, 10);
+        List<Object> outputResponseForSixthInput = Lists.newArrayList(11, 12);
+        List<Object> outputResponseForSeventhInput = Lists.newArrayList(13, 14);
+        List<Object> outputResponseForEighthInput = Lists.newArrayList(15, 16);
+
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponseForFirstInput.iterator())
+                .thenReturn(outputResponseForSecondInput.iterator())
+                .thenReturn(outputResponseForThirdInput.iterator())
+                .thenReturn(outputResponseForFourthInput.iterator())
+                .thenReturn(outputResponseForFifthInput.iterator())
+                .thenReturn(outputResponseForSixthInput.iterator())
+                .thenReturn(outputResponseForSeventhInput.iterator())
+                .thenReturn(outputResponseForEighthInput.iterator());
+
+        final String expectOutput = "[[{\"source\":\"1 2\"}], [{\"source\":\"3 4\"}]]";
+
+        final ResponseEntity<String> output =
+                controller.transformRequestJsonLines(
+                        "{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(),
+                        "application/jsonlines;data=text");
+
+        Assert.assertEquals(expectOutput, output.getBody());
+
+        final String expectOutput1 = "[[{\"source\":\"5 6\"}], [{\"source\":\"7 8\"}]]";
+
+        final ResponseEntity<String> output1 =
+                controller.transformRequestJsonLines(
+                        "{\"data\":[1,2.0,\"TEST1\"]}\n{\"data\":[2,3.0,\"TEST\"]}".getBytes(),
+                        "application/jsonlines;data=text");
+
+        Assert.assertEquals(expectOutput1, output1.getBody());
+
+        final String expectOutput2 =
+                "[[{\"source\":\"9 10\"}], [{\"source\":\"11 12\"}], "
+                        + "[{\"source\":\"13 14\"}], [{\"source\":\"15 16\"}]]";
+
+        final ResponseEntity<String> output2 =
+                controller.transformRequestJsonLines(
+                        ("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}\n{\"data\":[1,2.0,\"TEST1\"]}\n{\"data\":[2,3.0,\"TEST\"]}"
+                        ).getBytes(),
+                        "application/jsonlines;data=text");
+
+        Assert.assertEquals(expectOutput2, output2.getBody());
+    }
+
+    @Test
+    public void testProcessInputDataForJsonLines() throws IOException {
+
+        String jsonLinesAsString =
+                "{\"schema\":"
+                        + "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
+                        + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],"
+                        + "\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}},"
+                        + "\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}"
+                        + "\n{\"data\":[1,2.0,\"TEST1\"]}"
+                        + "\n{\"data\":[2,3.0,\"TEST\"]}";
+
+        List<Object> outputResponseForFirstInput = Lists.newArrayList(1, 2);
+        List<Object> outputResponseForSecondInput = Lists.newArrayList(3, 4);
+        List<Object> outputResponseForThirdInput = Lists.newArrayList(5, 6);
+        List<Object> outputResponseForFourthInput = Lists.newArrayList(7, 8);
+
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenReturn(outputResponseForFirstInput.iterator())
+                .thenReturn(outputResponseForSecondInput.iterator())
+                .thenReturn(outputResponseForThirdInput.iterator())
+                .thenReturn(outputResponseForFourthInput.iterator());
+
+        final String expectOutput = "[[1,2], [3,4], [5,6], [7,8]]";
+        final ResponseEntity<String> output = controller.transformRequestJsonLines(
+                jsonLinesAsString.getBytes(), "text/csv");
+
+        Assert.assertEquals(expectOutput, output.getBody());
+    }
+
+    @Test
+    public void testJsonLinesApiWithListInputThrowsException() {
+        schemaInJson = "{\"input\":[{\"name\":\"test_name_1\",\"type\":\"int\"},{\"name\":\"test_name_2\","
+                + "\"type\":\"double\"},{\"name\":\"test_name_3\",\"type\":\"string\"}],\"output\":{\"name\":\"out_name\",\"type\":\"int\",\"struct\":\"vector\"}}";
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        PowerMockito
+                .when(ScalaUtils.getJavaObjectIteratorFromArrayRow(Mockito.any(ArrayRow.class), Mockito.anyString()))
+                .thenThrow(new RuntimeException("input data is not valid"));
+        final ResponseEntity<String> output = controller.transformRequestJsonLines("{\"data\":[[1,2.0,\"TEST1\"], [2,3.0,\"TEST\"]]}".getBytes(), "text/csv");
+        Assert.assertEquals(output.getStatusCode(), HttpStatus.BAD_REQUEST);
+        Assert.assertEquals(output.getBody(), "input data is not valid");
+    }
+
+    @Test
+    public void testJsonLinesApiWithNullInput() {
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        final ResponseEntity<String> output = controller.transformRequestJsonLines(null, "text/csv");
+        Assert.assertEquals(output.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void testJsonLinesApiWithEmptyInput() {
+        PowerMockito.when(SystemUtils.getEnvironmentVariable("SAGEMAKER_SPARKML_SCHEMA")).thenReturn(schemaInJson);
+        final ResponseEntity<String> output = controller.transformRequestJsonLines(new byte[0], "text/csv");
+        Assert.assertEquals(output.getStatusCode(), HttpStatus.NO_CONTENT);
+    }
 
     @Test
     public void testParseAcceptEmptyFromRequestEnvironmentPresent() {
