@@ -22,8 +22,6 @@ import com.amazonaws.sagemaker.type.BasicDataType;
 import com.amazonaws.sagemaker.type.DataStructureType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.util.List;
 import ml.combust.mleap.core.types.ListType;
 import ml.combust.mleap.core.types.ScalarType;
 import ml.combust.mleap.core.types.TensorType;
@@ -32,8 +30,12 @@ import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilder;
 import ml.combust.mleap.runtime.javadsl.LeapFrameBuilderSupport;
 import org.apache.commons.io.IOUtils;
+import org.apache.spark.ml.linalg.Vectors;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.List;
 
 public class DataConversionHelperTest {
 
@@ -143,21 +145,11 @@ public class DataConversionHelperTest {
 
     @Test
     public void testCastingInputToJavaTypeList() {
-        Assert.assertEquals(Lists.newArrayList(1, 2), dataConversionHelper
-            .convertInputDataToJavaType(BasicDataType.INTEGER, DataStructureType.VECTOR,
-                Lists.newArrayList(new Integer("1"), new Integer("2"))));
 
-        Assert.assertEquals(Lists.newArrayList(1.0, 2.0), dataConversionHelper
-            .convertInputDataToJavaType(BasicDataType.FLOAT, DataStructureType.VECTOR,
-                Lists.newArrayList(new Double("1.0"), new Double("2.0"))));
-
-        Assert.assertEquals(Lists.newArrayList(1.0, 2.0), dataConversionHelper
-            .convertInputDataToJavaType(BasicDataType.DOUBLE, DataStructureType.VECTOR,
-                Lists.newArrayList(new Double("1.0"), new Double("2.0"))));
-
-        Assert.assertEquals(Lists.newArrayList(new Byte("1")), dataConversionHelper
-            .convertInputDataToJavaType(BasicDataType.BYTE, DataStructureType.VECTOR,
-                Lists.newArrayList(new Byte("1"))));
+        //Check vector struct and double type returns a Spark vector
+        Assert.assertEquals(Vectors.dense(new double[]{1.0, 2.0}),dataConversionHelper
+                .convertInputDataToJavaType(BasicDataType.DOUBLE, DataStructureType.VECTOR,
+                        Lists.newArrayList(new Double("1.0"), new Double("2.0"))));
 
         Assert.assertEquals(Lists.newArrayList(1L, 2L), dataConversionHelper
             .convertInputDataToJavaType(BasicDataType.LONG, DataStructureType.ARRAY,
@@ -173,6 +165,12 @@ public class DataConversionHelperTest {
         Assert.assertEquals(Lists.newArrayList(Boolean.valueOf("1")), dataConversionHelper
             .convertInputDataToJavaType(BasicDataType.BOOLEAN, DataStructureType.ARRAY,
                 Lists.newArrayList(Boolean.valueOf("1"))));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertInputToJavaTypeNonDoibleVector() {
+        dataConversionHelper
+                .convertInputDataToJavaType(BasicDataType.INTEGER, DataStructureType.VECTOR, new Integer("1"));
     }
 
     @Test(expected = IllegalArgumentException.class)
