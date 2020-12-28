@@ -1,0 +1,23 @@
+{
+  "schema": {
+    "input": [
+      {
+        "name": "name_1",
+        "type": "int"
+      },
+      {
+        "name": "name_2",
+        "type": "string"
+      },
+      {
+        "name": "name_3",
+        "type": "double"
+      }
+    ],
+    "output": {
+      "name": "features",
+      "type": "double"
+    }
+  },
+  "data": [[1, "C", 38.0], [2, "D", 39.0]]
+}
