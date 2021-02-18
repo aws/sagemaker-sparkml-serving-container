@@ -11,5 +11,5 @@ Release of sagemaker-sparkml-serving-container, supporting Spark major version 2
 2.4
 ===
 
-Release of sagemaker-sparkml-serving-container, supporting Spark major version 2.4. 
+Release of sagemaker-sparkml-serving-container, supporting Spark major version 2.4.
 
