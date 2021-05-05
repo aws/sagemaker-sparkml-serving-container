@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
 
-RUN apt-get update && apt-get -y install apt-utils net-tools apt-transport-https wget curl nginx git maven
+RUN apt-get update && apt-get -y install apt-utils net-tools apt-transport-https wget curl nginx git maven libgomp1
 
 RUN apt -y update
 RUN apt -y install python3.6
