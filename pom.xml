@@ -134,7 +134,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>r05</version>
+      <version>[30.0-jre,)</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.netlib-java</groupId>
