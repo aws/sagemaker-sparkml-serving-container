@@ -153,8 +153,13 @@
     </dependency>
     <dependency>
       <groupId>ml.combust.mleap</groupId>
-      <artifactId>mleap-runtime_2.11</artifactId>
-      <version>0.15.0</version>
+      <artifactId>mleap-runtime_2.12</artifactId>
+      <version>0.16.0</version>
+    </dependency>
+    <dependency>
+      <groupId>ml.combust.mleap</groupId>
+      <artifactId>mleap-tensorflow_2.12</artifactId>
+      <version>0.16.0</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-mllib-local -->
     <dependency>
