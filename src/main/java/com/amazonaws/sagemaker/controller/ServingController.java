@@ -42,8 +42,8 @@ import ml.combust.mleap.runtime.frame.ArrayRow;
 import ml.combust.mleap.runtime.frame.DefaultLeapFrame;
 import ml.combust.mleap.runtime.frame.Transformer;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -59,7 +59,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ServingController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ServingController.class);
+    private static final Logger LOG = LogManager.getLogger(ServingController.class);
     private static final List<String> VALID_ACCEPT_LIST = Lists
         .newArrayList(AdditionalMediaType.TEXT_CSV_VALUE, AdditionalMediaType.APPLICATION_JSONLINES_VALUE,
             AdditionalMediaType.APPLICATION_JSONLINES_TEXT_VALUE);
