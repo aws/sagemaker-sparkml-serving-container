@@ -19,10 +19,10 @@ RUN apt-get update \
 
 RUN apt -y update
 
-ARG OPENSSL_VERSION=1.1.1l
+ARG OPENSSL_VERSION=1.1.1o
 ARG PYTHON=python3
 ARG PIP=pip3
-ARG PYTHON_VERSION=3.6.13
+ARG PYTHON_VERSION=3.10.6
 
 # Open-SSL
 RUN wget -q -c https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
@@ -54,7 +54,7 @@ WORKDIR /sagemaker-sparkml-model-server
 
 RUN mvn clean package
 
-RUN cp ./target/sparkml-serving-2.4.jar /usr/local/lib/sparkml-serving-2.4.jar
+RUN cp ./target/sparkml-serving-3.3.jar /usr/local/lib/sparkml-serving-3.3.jar
 RUN cp ./serve.sh /usr/local/bin/serve.sh
 
 RUN chmod a+x /usr/local/bin/serve.sh
