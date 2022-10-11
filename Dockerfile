@@ -19,10 +19,10 @@ RUN apt-get update \
 
 RUN apt -y update
 
-ARG OPENSSL_VERSION=1.1.1o
+ARG OPENSSL_VERSION=1.1.1r
 ARG PYTHON=python3
 ARG PIP=pip3
-ARG PYTHON_VERSION=3.10.6
+ARG PYTHON_VERSION=3.10.7
 
 # Open-SSL
 RUN wget -q -c https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
@@ -34,7 +34,7 @@ RUN wget -q -c https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz 
  && rmdir /usr/local/ssl/certs \
  && ln -s /etc/ssl/certs /usr/local/ssl/certs
 
-# Install Python-3.6.13 from source
+# Install Python-3.10.7 from source
 RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz \
  && tar -xzf Python-$PYTHON_VERSION.tgz \
  && cd Python-$PYTHON_VERSION \
