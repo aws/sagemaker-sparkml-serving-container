@@ -19,7 +19,7 @@ RUN apt-get update \
 
 RUN apt -y update
 
-ARG OPENSSL_VERSION=1.1.1r
+ARG OPENSSL_VERSION=1.1.1l
 ARG PYTHON=python3
 ARG PIP=pip3
 ARG PYTHON_VERSION=3.10.7
