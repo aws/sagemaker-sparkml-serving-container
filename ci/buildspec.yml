@@ -9,7 +9,8 @@ phases:
     commands:
     - echo Build started on `date`
     - echo Building the Docker image...
-    - docker build -t sagemaker-sparkml-serving:2.4 .
+    - ls
+    - docker build -t sagemaker-sparkml-serving:3.3 .
     - docker tag sagemaker-sparkml-serving:3.3 515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3
   post_build:
     commands:
