@@ -58,4 +58,5 @@ RUN cp ./target/sparkml-serving-3.3.jar /usr/local/lib/sparkml-serving-3.3.jar
 RUN cp ./serve.sh /usr/local/bin/serve.sh
 
 RUN chmod a+x /usr/local/bin/serve.sh
+
 ENTRYPOINT ["/usr/local/bin/serve.sh"]
