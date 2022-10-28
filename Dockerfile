@@ -59,4 +59,27 @@ RUN cp ./serve.sh /usr/local/bin/serve.sh
 
 RUN chmod a+x /usr/local/bin/serve.sh
 
+# remove the maven-shared-utils packages - older versions create vulnerabilities
+RUN find / -depth -name maven-shared-utils -type d -exec rm -r "{}" \;
+
+# remove the surefire packages - contains versions of maven-shared-utils that create vulnerabilities
+RUN find / -depth -name surefire -type d -exec rm -r "{}" \;
+
+# remove maven-shared-utils jar file with vulnerabilities
+# comment out if need to use maven utilities
+RUN rm /usr/share/java/maven-shared-utils.jar
+
+# remove plexus-utils directory because plexus-utils has vulnerabilities
+# comment out if need to use maven utilities
+RUN find / -depth -name plexus-utils -type d -exec rm -r "{}" \;
+
+# remove old version of json-smart with vulnerability
+RUN find / -depth -name json-smart -type d -exec rm -r "{}/2.3" \;
+
+# remove old version of commons-compress with vulnerability
+RUN find / -depth -name commons-compress -type d -exec rm -r "{}/1.18" \;
+
+# remove old version of spring-core with vulnerability
+RUN find / -depth -name spring-core -type d -exec rm -r "{}/5.1.19.RELEASE" \;
+
 ENTRYPOINT ["/usr/local/bin/serve.sh"]
