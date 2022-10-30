@@ -1,6 +1,17 @@
 version: 0.2
-
+env:
+  variables:
+    DLC_IMAGES: "515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3"
+    IS_GENERIC_IMAGE: "True"
+    CODEBUILD_RESOLVED_SOURCE_VERSION: "sparkml-v33"
 phases:
+  install:
+    runtime-versions:
+      python: latest
+    commands:
+      - pip3 install pytest
+      - pip3 install -r $CODEBUILD_SRC_DIR_Source2/src/requirements.txt
+      - pip3 install -r $CODEBUILD_SRC_DIR_Source2/test/requirements.txt
   pre_build:
     commands:
     - echo Logging in to Amazon ECR...
@@ -9,11 +20,15 @@ phases:
     commands:
     - echo Build started on `date`
     - echo Building the Docker image...
-    - ls
     - docker build -t sagemaker-sparkml-serving:3.3 .
-    - docker tag sagemaker-sparkml-serving:3.3 515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3
+    - docker tag sagemaker-sparkml-serving:3.3 $DLC_IMAGES
   post_build:
     commands:
     - echo Build completed on `date`
     - echo Pushing the Docker image...
-    - docker push 515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3
+    - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
+    - docker push $DLC_IMAGES
+    - cd $CODEBUILD_SRC_DIR_Source2
+    - export PYTHONPATH=$(pwd)/src
+    - cd test/dlc_tests
+    - pytest -s sanity/test_ecr_scan.py::test_ecr_enhanced_scan
