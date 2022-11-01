@@ -18,6 +18,7 @@ RUN apt-get update \
     zlib1g-dev
 
 RUN apt -y update
+ 
 
 ARG OPENSSL_VERSION=1.1.1q
 ARG PYTHON=python3
@@ -69,17 +70,27 @@ RUN find / -depth -name surefire -type d -exec rm -r "{}" \;
 # comment out if need to use maven utilities
 RUN rm /usr/share/java/maven-shared-utils.jar
 
+# remove wagon-http-shaded jar file with vulnerabilities associated with org.jsoup:jsoup
+RUN rm /usr/share/java/wagon-http-shaded-3.3.4.jar
+
 # remove plexus-utils directory because plexus-utils has vulnerabilities
 # comment out if need to use maven utilities
 RUN find / -depth -name plexus-utils -type d -exec rm -r "{}" \;
 
 # remove old version of json-smart with vulnerability
-RUN find / -depth -name json-smart -type d -exec rm -r "{}/2.3" \;
+# RUN find / -depth -name json-smart -type d -exec rm -r "{}/2.3" \;
 
 # remove old version of commons-compress with vulnerability
-RUN find / -depth -name commons-compress -type d -exec rm -r "{}/1.18" \;
+RUN find / -depth -name commons-compress -type d -exec rm -r "{}/1.20" \;
+
+# remove jar files from common-io v2.5 and 2.6 both have vulnerabilities
+RUN find / -name commons-io*2.5.jar -type f -exec rm "{}" \;
+RUN find / -name commons-io*2.6.jar -type f -exec rm "{}" \;
 
 # remove old version of spring-core with vulnerability
-RUN find / -depth -name spring-core -type d -exec rm -r "{}/5.1.19.RELEASE" \;
+# RUN find / -depth -name spring-core -type d -exec rm -r "{}/5.1.19.RELEASE" \;
+
+# remove jackson-databind
+RUN find / -name jackson-databind -type d -exec rm -r "{}/2.13.3" \;
 
 ENTRYPOINT ["/usr/local/bin/serve.sh"]
