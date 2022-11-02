@@ -1,9 +1,10 @@
 version: 0.2
 env:
   variables:
-    DLC_IMAGES: "515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3"
     IS_GENERIC_IMAGE: "True"
     CODEBUILD_RESOLVED_SOURCE_VERSION: "sparkml-v33"
+    TGT_IMAGE: "515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3"
+    DLC_IMAGES: "515193369038.dkr.ecr.us-west-2.amazonaws.com/sagemaker-sparkml-serving:3.3-pre-scan"
 phases:
   install:
     runtime-versions:
@@ -18,17 +19,23 @@ phases:
     - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
   build:
     commands:
-    - echo Build started on `date`
-    - echo Building the Docker image...
-    - docker build -t sagemaker-sparkml-serving:3.3 .
-    - docker tag sagemaker-sparkml-serving:3.3 $DLC_IMAGES
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t sagemaker-sparkml-serving:3.3 .
+      - echo Build completed on `date`
   post_build:
+    on-failure: ABORT
     commands:
-    - echo Build completed on `date`
-    - echo Pushing the Docker image...
-    - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
-    - docker push $DLC_IMAGES
-    - cd $CODEBUILD_SRC_DIR_Source2
-    - export PYTHONPATH=$(pwd)/src
-    - cd test/dlc_tests
-    - pytest -s sanity/test_ecr_scan.py::test_ecr_enhanced_scan
+      - echo Tagging pre-scan image...
+      - docker tag sagemaker-sparkml-serving:3.3 $DLC_IMAGES
+      - docker push $DLC_IMAGES
+      - cd $CODEBUILD_SRC_DIR_Source2
+      - export PYTHONPATH=$(pwd)/src
+      - cd test/dlc_tests
+      - echo Running enhanced ecr image scan
+      - pytest -s sanity/test_ecr_scan.py::test_ecr_enhanced_scan
+      - echo Tagging image for final push
+      - docker tag sagemaker-sparkml-serving:3.3 $TGT_IMAGE
+      - docker push $TGT_IMAGE
+      - echo $TGT_IMAGE pushed to ECR
+      - echo Push completed successfully on `date`
