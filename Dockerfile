@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
 
 RUN apt-get update \
+ && apt-get -y upgrade \
  && apt-get -y install apt-utils \
     net-tools \
     apt-transport-https \
@@ -77,9 +78,6 @@ RUN rm /usr/share/java/wagon-http-shaded-3.3.4.jar
 # comment out if need to use maven utilities
 RUN find / -depth -name plexus-utils -type d -exec rm -r "{}" \;
 
-# remove old version of json-smart with vulnerability
-# RUN find / -depth -name json-smart -type d -exec rm -r "{}/2.3" \;
-
 # remove old version of commons-compress with vulnerability
 RUN find / -depth -name commons-compress -type d -exec rm -r "{}/1.20" \;
 
@@ -87,10 +85,19 @@ RUN find / -depth -name commons-compress -type d -exec rm -r "{}/1.20" \;
 RUN find / -name commons-io*2.5.jar -type f -exec rm "{}" \;
 RUN find / -name commons-io*2.6.jar -type f -exec rm "{}" \;
 
-# remove old version of spring-core with vulnerability
-# RUN find / -depth -name spring-core -type d -exec rm -r "{}/5.1.19.RELEASE" \;
-
 # remove jackson-databind
 RUN find / -name jackson-databind -type d -exec rm -r "{}/2.13.3" \;
+
+# remove junit-4.12.jar
+RUN find / -name junit-4.12.jar -type f -exec rm "{}" \;
+
+# remove maven-compiler-plugin jar from maven repo
+RUN find / -name maven-compiler-plugin*.jar -type f -exec rm "{}" \;
+
+# remove guava jar files
+RUN rm /usr/share/java/guava.jar && rm /root/.m2/repository/com/google/guava/guava/10.0.1/guava-10.0.1.jar
+
+# remove commons-codec jar
+RUN find / -name commons-codec-1.11.jar -type f -exec rm "{}" \;
 
 ENTRYPOINT ["/usr/local/bin/serve.sh"]
